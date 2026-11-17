@@ -1,0 +1,363 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0"><title>HRI Demo 中稿精读</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: sidebar paper list | brief + paper pages with margin notes aligned to paragraphs | slide-in podcast panel */
+:root {
+  --bg: #eef4fa;          /* pale blue ground */
+  --surface: #ffffff;
+  --surface-2: #f6f9fc;
+  --note: #fbf6ec;        /* warm beige note paper */
+  --note-line: #eadfca;
+  --fg: #1f2a37;
+  --muted: #5d6b7c;
+  --line: #d8e3ee;
+  --accent: #3d74ad;
+  --accent-soft: #dce9f6;
+  --hl: rgba(61,116,173,.10);
+  --hl-on: rgba(230,170,60,.22);
+  --hl-border: rgba(61,116,173,.35);
+  --good: #8a5a12;
+  --good-bg: #f5e8cf;
+  --shadow: 0 1px 2px rgba(30,50,80,.06), 0 4px 16px rgba(30,50,80,.06);
+  --sans: "Inter", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+  --r-lg: 18px; --r-md: 12px; --r-sm: 8px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141b23; --surface: #1b242f; --surface-2: #202b37; --note: #262420; --note-line: #3a352b;
+  --fg: #e3e9f0; --muted: #9aa8b8; --line: #2c3947; --accent: #8db8e6; --accent-soft: #24384d;
+  --hl: rgba(141,184,230,.10); --hl-on: rgba(230,170,60,.25); --hl-border: rgba(141,184,230,.4);
+  --good: #e8c27e; --good-bg: #3a3122; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #141b23; --surface: #1b242f; --surface-2: #202b37; --note: #262420; --note-line: #3a352b;
+  --fg: #e3e9f0; --muted: #9aa8b8; --line: #2c3947; --accent: #8db8e6; --accent-soft: #24384d;
+  --hl: rgba(141,184,230,.10); --hl-on: rgba(230,170,60,.25); --hl-border: rgba(141,184,230,.4);
+  --good: #e8c27e; --good-bg: #3a3122; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25); color-scheme: dark }
+
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 14px; line-height: 1.6; }
+* { box-sizing: border-box; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app { display: grid; grid-template-columns: 248px minmax(0,1fr); height: 100%; }
+
+/* sidebar */
+.side { background: var(--surface); border-right: 1px solid var(--line); overflow-y: auto; padding: 18px 12px 24px max(12px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 14px; }
+.brand { padding: 0 8px; font-weight: 600; font-size: 15px; }
+.credit { margin: auto 8px 0; font-size: 11.5px; line-height: 1.6; color: var(--muted); }
+.credit a { color: inherit; }
+.brand small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.plist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.pitem { width: 100%; text-align: left; border: 0; background: transparent; border-radius: var(--r-md); padding: 9px 10px; display: flex; flex-direction: column; gap: 3px; }
+.pitem:hover { background: var(--surface-2); }
+.pitem[aria-current="true"] { background: var(--accent-soft); }
+.pitem .nm { font-weight: 600; font-size: 14px; }
+.pitem .ti { color: var(--muted); font-size: 12px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font-size: 11px; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); white-space: nowrap; }
+.chip.t { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+
+.nav { display: flex; flex-direction: column; gap: 16px; }
+.grp { display: flex; flex-direction: column; gap: 4px; }
+.grp h2 { margin: 0; padding: 0 10px; font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; }
+.grp h2 small { display: block; font-weight: 400; letter-spacing: 0; }
+.pitem.lst { flex-direction: row; align-items: center; gap: 8px; }
+.pitem.lst .nm { font-weight: 500; }
+.pitem .rk { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 18px; }
+
+/* ranked list view */
+.listview { display: flex; flex-direction: column; gap: 12px; }
+.lv-intro { color: var(--muted); max-width: 46em; margin: 0; }
+.lv-h { font-size: 13px; font-weight: 600; color: var(--muted); margin: 10px 0 0; letter-spacing: .04em; }
+.card { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 14px 18px; display: grid; grid-template-columns: 34px minmax(0,1fr); gap: 4px 12px; }
+.card .no { grid-row: span 4; font-size: 20px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.card .tt { font-weight: 600; font-size: 14.5px; line-height: 1.4; }
+.card .tt a { color: inherit; text-decoration: none; }
+.card .tt a:hover { color: var(--accent); }
+.card .mt { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+.card .why { color: var(--good); }
+.st { font-size: 11px; padding: 1px 9px; border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; }
+.st.full { background: var(--accent); color: var(--surface); border-color: var(--accent); cursor: pointer; }
+.st.need { background: var(--good-bg); color: var(--good); border-color: transparent; }
+.forme { background: var(--accent-soft); border-radius: var(--r-md); padding: 10px 14px; }
+.forme ul { margin: 0; }
+
+/* main */
+.main { overflow-y: auto; height: 100%; scroll-behavior: smooth; }
+.wrap { max-width: 1060px; margin: 0 auto; padding-block: 20px 80px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 18px; }
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.topbar h1 { font-size: 17px; margin: 0; flex: 1 1 280px; min-width: 0; text-wrap: balance; line-height: 1.35; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-size: 13px; display: inline-flex; gap: 6px; align-items: center; text-decoration: none; color: var(--fg); }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.menu-btn { display: none; }
+.meta { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* brief */
+.brief { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 18px 20px; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px 24px; }
+.brief .full { grid-column: 1 / -1; }
+.brief h3 { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; }
+.brief p { margin: 0; }
+.brief ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+.oneline { font-size: 15px; font-weight: 500; }
+.flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.flow span.s { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 3px 9px; font-size: 13px; }
+.flow span.a { color: var(--muted); font-size: 12px; }
+.take { background: var(--good-bg); color: var(--good); border-radius: var(--r-md); padding: 8px 12px; }
+
+/* pages + notes */
+.legend { color: var(--muted); font-size: 12px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
+.page-row { display: grid; grid-template-columns: minmax(0, 620px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.page { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 64px); background: #fff; border-radius: var(--r-md); box-shadow: var(--shadow); overflow: hidden; }
+.page img { display: block; width: 100%; height: auto; }
+.pno { position: absolute; top: 8px; left: 10px; font-size: 11px; color: #6b7785; background: rgba(255,255,255,.85); border-radius: 999px; padding: 0 8px; }
+.hl { position: absolute; background: var(--hl); border: 1px solid transparent; border-radius: 4px; cursor: pointer; transition: background .15s; }
+.hl:hover, .hl.on { background: var(--hl-on); border-color: var(--hl-border); }
+.mk { position: absolute; left: -2px; transform: translateX(-100%); top: -2px; }
+.badge { min-width: 20px; height: 20px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; padding: 0 5px; font-variant-numeric: tabular-nums; }
+.hl .badge { position: absolute; top: -9px; left: -9px; box-shadow: 0 0 0 2px #fff; }
+.notes { position: relative; min-height: 100%; }
+.note { position: absolute; left: 0; right: 0; background: var(--note); border: 1px solid var(--note-line); border-radius: var(--r-md); padding: 7px 11px; display: flex; flex-direction: column; gap: 3px; cursor: pointer; transition: box-shadow .15s, border-color .15s; }
+.note:hover, .note.on { border-color: var(--accent); box-shadow: var(--shadow); }
+.note .hd { display: flex; gap: 8px; align-items: center; }
+.note .sec { font-size: 11px; color: var(--muted); }
+.note .role { margin-left: auto; font-size: 11px; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
+.note .sum { font-size: 13.5px; line-height: 1.55; }
+.note .good { font-size: 12.5px; color: var(--good); background: var(--good-bg); border-radius: var(--r-sm); padding: 3px 8px; line-height: 1.5; }
+.note .good b { font-weight: 600; margin-right: 4px; }
+
+/* podcast drawer */
+.pod { position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 100%); background: var(--surface); box-shadow: -8px 0 30px rgba(20,40,70,.12); transform: translateX(105%); transition: transform .25s ease; z-index: 20; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px); border-radius: var(--r-lg) 0 0 var(--r-lg); }
+.pod.open { transform: none; }
+.pod header { padding: 16px 20px 10px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid var(--line); }
+.pod header h2 { font-size: 15px; margin: 0; flex: 1; min-width: 0; }
+.pod .body { overflow-y: auto; padding: 16px 22px 40px; font-size: 15px; line-height: 1.85; }
+.pod .body p { margin: 0 0 14px; max-width: 34em; }
+.x { border: 0; background: var(--surface-2); border-radius: 999px; width: 30px; height: 30px; }
+@media (min-width: 1560px) { body.pod-on .main { padding-right: 460px; } }
+@media (prefers-reduced-motion: reduce) { .pod, .hl, .note { transition: none; } .main { scroll-behavior: auto; } }
+
+/* narrow */
+@media (max-width: 980px) {
+  .page-row { grid-template-columns: minmax(0,1fr); }
+  .page { position: relative; top: 0; }
+  .notes { position: static; display: flex; flex-direction: column; gap: 8px; }
+  .note { position: static; }
+}
+@media (max-width: 760px) {
+  .app { grid-template-columns: minmax(0,1fr); }
+  .side { position: fixed; inset: 0 auto 0 0; width: min(300px, 86%); z-index: 15; transform: translateX(-105%); transition: transform .2s; padding-top: max(18px, env(safe-area-inset-top, 0px)); }
+  .side.open { transform: none; box-shadow: 8px 0 30px rgba(20,40,70,.15); }
+  .menu-btn { display: inline-flex; }
+  .brief { grid-template-columns: minmax(0,1fr); }
+}
+</style>
+
+<div class="app">
+  <nav class="side" id="side" aria-label="论文列表">
+    <div class="brand">HRI Demo / Video 精读<small>审稿人批注 · 播客文稿</small></div>
+    <div id="nav" class="nav"></div>
+    <p class="credit" id="credit" hidden></p>
+  </nav>
+  <main class="main" id="main">
+    <div class="wrap">
+      <div class="topbar">
+        <button class="btn menu-btn" id="menuBtn" aria-label="打开论文列表">列表</button>
+        <h1 id="ptitle"></h1>
+        <span class="meta" id="pmeta"></span>
+        <a class="btn" id="pdfLink" target="_blank" rel="noopener">原 PDF</a>
+        <button class="btn primary" id="podBtn">播客文稿</button>
+      </div>
+      <div id="reader" style="display:flex;flex-direction:column;gap:18px">
+        <section class="brief" id="brief" aria-label="速览"></section>
+        <div class="legend"><span><i style="background:var(--hl-on)"></i>点批注或原文段落可互相定位</span><span><i style="background:var(--good-bg)"></i>亮点 = 可直接学的写法</span></div>
+        <div id="pages" style="display:flex;flex-direction:column;gap:22px"></div>
+      </div>
+      <div id="listview" class="listview" hidden></div>
+    </div>
+  </main>
+</div>
+<aside class="pod" id="pod" aria-label="播客文稿" aria-hidden="true">
+  <header><h2 id="podTitle"></h2><span class="meta" id="podMeta"></span><button class="x" id="podClose" aria-label="关闭播客文稿">✕</button></header>
+  <div class="body" id="podBody"></div>
+</aside>
+
+<script>
+const DATA = {"papers": [{"id": "3794575", "title": "Bloom Preview: A Low-Cost LLM-Powered Social Robot", "short": "Bloom", "track": "Demo", "tag": "技术+互动", "kind": "完整机器人系统", "one_line": "在开源Blossom基础上做出$315起、可抱可摸、接入LLM对话的桌面社交机器人", "contributions": ["可抱的硬壳身体：9个触摸传感器+音频+视觉的多模态平台", "离线/在线双后端的语音+LLM对话+触摸响应+人脸跟踪软件栈", "Lite/Regular/AI三档配置与完整BOM，并用三个社会应用示范"], "logic": ["社交机器人有益但商用款数千美元", "低价平台缺触摸与对话智能", "Bloom补齐触摸+LLM，仍守住低价", "逐模块交代硬件选型与成本理由", "软件栈：双后端语音、prompt模式", "三个应用场景+后续改进与部署"], "why_accepted": ["踩中LLM具身化+低成本民主化两条主线，Table 1直接和Blossom、Reachy Mini比价比功能", "触摸+说话+转头都能现场上手玩，天然适合Demo展位，且有配套视频", "BOM到元、离线方案无需账号，可复现性强；面向学生心理、独居老人等真实需求群体"], "takeaway": "用一张对比表把“比谁便宜、比谁多功能”量化，再给分档BOM，审稿人一眼看清贡献", "podcast": "一台能抱在怀里、你摸它脑袋它会开心地点头、还能用大模型跟你聊天的社交机器人，要多少钱？Furhat 两万八，QTrobot 一万二，就连最小的 Misty 也要八千美元。今天聊的这篇 HRI 2026 Demo 论文，给出的答案是三百一十五美元，大概是一部入门手机的价钱。它叫 Bloom，来自南佛罗里达大学的 RARE Lab。\n\n先说它长什么样。Bloom 是一个粉色的、像不倒翁一样的 3D 打印硬壳，四十厘米左右高，头上有两只耳朵，还能换成猫头。它的骨架其实借自康奈尔的开源机器人 Blossom，头部用四个舵机控制转动。作者很坦白地说，头部机构是继承来的，他们的新东西是这个可以抱、可以摸的身体，以及塞进身体里的一整套多模态能力。\n\n具体有什么？身体两半加头顶一共九个电容式触摸传感器，外壳内侧贴了铜箔，让手隔着塑料也能被感知；头顶的铜箔还专门做成蛛网形状来扩大覆盖。麦克风阵列能判断声音从哪个方向来，然后机器人把头转过去，表示我在听。额头后面藏了广角摄像头，配一块 AI 加速器做实时人脸跟踪，模拟眼神接触。大脑是一块树莓派 5，作者特意说明为什么不用 Jetson：价格差了五倍。\n\n交互流程是这样的：你说一句 Hi Bloom 唤醒它，它听你说今天好累，然后用 Gemini 生成一段很温暖的回应；你摸它一下，它从十一种开心动作里随机挑一个，比如轻轻弹一下头。语音识别和语音合成都有离线、在线两套后端，网络不好也能用；网络延迟高的时候，它会先说一声嗯，让你知道它没有走神。还有一个 Flask 网页，可以把用户的名字、兴趣直接写进 prompt，实现个性化。至于大模型怎么说话，作者也没有随便写一段提示词了事，而是引用了一个现成的 prompt 模式目录，用三种模式来约束它：人设模式让它扮演温暖的陪伴者，语言模式让它只说日常大白话，上下文管理模式让它记住话题、避开敏感内容。这样一来，写个提示词就变成了有出处的设计决策。\n\n为什么能中？我觉得有三点。第一，它同时踩中了 HRI 这两年最热的两个词：LLM 具身化和低成本民主化。而且它没有空喊便宜，而是放了一张对比表，跟 Blossom、Reachy Mini 逐项比功能和价格，又给了一张精确到每个零件的物料清单，分 Lite、Regular、AI 三档。审稿人看完就知道，这东西别的实验室真的能复现。第二，它特别适合 Demo 展位，触摸、说话、转头，观众走过来就能上手体验。第三，它把应用落在了真实的人群上：压力大的大学生、独居的老人、为孩子吃饭发愁的家长，并且已经在跟企业谈养老社区的部署。\n\n当然它也有明显的短板，没有任何用户研究，三个应用都还停留在演示层面。头部的拉线结构精度也不够，作者在结尾老实交代，正在改成刚性连杆，还贴了 3D 打印原型的照片，并说明比较过线性执行器为什么没选。这种写法很聪明：把局限变成路线图，审稿人看到的是一个在往前走的项目。何况 Demo track 本来就不要求你证明效果，它要的是一个完整、可体验、讲得清楚的系统。\n\n如果你打算投 2027 的 Demo，这篇最值得学的一个写法是：别只说我的系统更好，把你和最接近的竞品放进同一张表里，用价格和功能打勾说话。一张表，胜过一页形容词；再加一张分档的物料清单，你的可复现性就不用再多解释了。", "notes": [{"sec": "Abstract", "sum": "高端贵、低价能力弱→Bloom=触摸+LLM对话+人脸跟踪，可定制外壳，适用多领域", "role": "压缩全文论点", "good": "开头即用“However…and, yet”两层转折，同时否定高端和低端两类方案", "rects": [[1, 51.5, 429.7, 297.6, 586.4]], "page": 1, "y": 431.7}, {"sec": "Figure 1", "sum": "外观、拆开的头/身体内部、触摸铜箔、背部开关和可换的猫头", "role": "Teaser：一图看懂系统", "good": "外壳与剖面并排、组件直接贴标签，读者无需读正文就知道里面装了什么", "rects": [[1, 142.4, 267.3, 483.0, 388.7], [1, 69.3, 301.8, 328.4, 388.7], [1, 51.8, 400.1, 519.7, 430.6]], "page": 1, "y": 269.3}, {"sec": "1 Introduction", "sum": "社交机器人益处多，但QTrobot/Furhat/Misty售价8k–28k美元", "role": "立痛点：成本门槛", "good": "直接报具体机型的尺寸和价格，痛点可量化，比“昂贵”有说服力", "rects": [[1, 316.0, 565.9, 561.7, 645.8]], "page": 1, "y": 567.9}, {"sec": "1 Introduction", "sum": "Blossom、Reachy Mini便宜但缺触摸情感交互和对话智能；引文支撑触摸与生成式AI的价值", "role": "定位缺口", "good": "先承认已有低价方案，再精确指出两项缺失，正好对应自己的两项贡献", "rects": [[1, 315.6, 642.6, 561.7, 711.6], [2, 51.8, 349.4, 297.6, 385.5]], "page": 1, "y": 644.6}, {"sec": "1 Introduction / Table 1", "sum": "复用Blossom头部机构，新增可抱硬壳+音视频+触摸+LLM；$315与竞品对比；预告三个应用", "role": "声明贡献与新颖性", "good": "坦白“基于Blossom”，再划清自己的增量，避免被质疑新颖性", "rects": [[2, 51.5, 91.8, 297.6, 517.0]], "page": 2, "y": 93.8}, {"sec": "2 Bloom Robot / Table 2", "sum": "尺寸参数；Lite/Regular/AI三档差异；逐项物料与价格（$315/$373/$556）", "role": "系统概览+可复现依据", "good": "分档配置让不同预算的实验室都能对号入座，降低采用门槛", "rects": [[2, 51.6, 190.4, 297.6, 630.7]], "page": 2, "y": 192.4}, {"sec": "2.1 Enabling Hardware", "sum": "选Pi 5而非Jetson（$50 vs $249）；XL-320舵机；麦克风阵列定位声源后转头；立体声功放", "role": "交代选型理由", "good": "每个部件都配一句“为什么”，且把声源定位落到“转头表示倾听”的交互意义", "rects": [[2, 51.8, 653.5, 297.6, 711.6], [2, 316.0, 289.5, 561.7, 380.4]], "page": 2, "y": 291.5}, {"sec": "Figure 2", "sum": "以老人陪伴为例：唤醒→语音→LLM回应→跟踪人脸→被摸后做开心动作", "role": "展示交互全流程", "good": "把软件模块嵌进一段真实对话里，架构图兼作交互脚本", "rects": [[2, 316.0, 249.7, 560.2, 274.9]], "page": 2, "y": 251.7}, {"sec": "2.1 Enabling Hardware", "sum": "广角摄像头；9个电容触摸+铜箔穿透外壳；UPS无线供电；13-TOPS加速器+散热", "role": "补全感知与供电", "good": "铜箔导电、蛛网图案等小技巧写得具体，同行可直接照做", "rects": [[2, 315.6, 377.1, 561.7, 511.9]], "page": 2, "y": 379.1}, {"sec": "2.2 Software and Robot Behavior", "sum": "STT离线Vosk/在线Google可切换；自训EfficientWord-Net唤醒词，免在线账号", "role": "解决现场鲁棒性", "good": "交代“先试picovoice后换掉”的原因，体现真实工程取舍", "rects": [[2, 315.7, 533.0, 561.7, 689.7]], "page": 2, "y": 535.0}, {"sec": "2.2 Software and Robot Behavior", "sum": "TTS同样在线OpenAI/离线Piper；流式播放；延迟高时说“um”表示在听", "role": "处理延迟体验", "rects": [[2, 316.0, 686.4, 560.4, 711.6], [3, 51.8, 83.7, 296.2, 141.7]], "page": 2, "y": 688.4}, {"sec": "2.2 Software and Robot Behavior", "sum": "调用Gemini 2.5 Flash Lite，按Persona/Meta Language/Context Manager三种prompt模式设计", "role": "说明LLM如何被约束", "good": "引用现成prompt pattern目录，让“写了个prompt”变成有方法依据的设计", "rects": [[3, 51.8, 138.5, 297.6, 240.4]], "page": 3, "y": 140.5}, {"sec": "3 Application Domain Demonstrations", "sum": "老人孤独陪伴（触摸+个性化对话）；无线可带进厨房为家长推荐健康食谱", "role": "证明通用性", "good": "每个场景都点名用到哪项硬件特性（触摸、无线），应用与设计相互呼应", "rects": [[3, 51.8, 554.9, 296.3, 711.6], [3, 316.0, 186.9, 560.2, 212.1]], "page": 3, "y": 188.9}, {"sec": "2.2 Software and Robot Behavior", "sum": "加速器上跑人脸跟踪；触摸回调随机选11种开心头部动作；Flask网页录入用户信息进prompt", "role": "把硬件转成行为", "rects": [[3, 51.8, 237.1, 297.6, 404.7]], "page": 3, "y": 239.1}, {"sec": "3 Application Domain Demonstrations", "sum": "三应用总述；大学生因费用/渠道难求助，Bloom用讲故事式对话辅助情绪反思", "role": "证明用途：心理健康", "rects": [[3, 51.5, 434.4, 297.6, 558.2]], "page": 3, "y": 436.4}, {"sec": "4 Next Steps / Figure 3", "sum": "继续降延迟；头部从拉线改刚性连杆，已用3D打印原型测试", "role": "坦承局限并给路线", "good": "列出比较过的方案和选择理由，让“未完成”显得有规划", "rects": [[3, 315.6, 159.9, 560.4, 345.6]], "page": 3, "y": 161.9}, {"sec": "4 Conclusion", "sum": "与企业合作进养老社区部署收集反馈；重申触摸+动作+LLM+低价的贡献", "role": "收束并指向真实部署", "rects": [[3, 315.6, 342.3, 561.7, 411.3]], "page": 3, "y": 344.3}], "pages": [{"img": "pages/3794575-p1.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794575-p2.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794575-p3.jpg", "w": 612.0, "h": 792.0}], "pdf": "pdf/3794575.pdf"}, {"id": "3794576", "title": "Jazzy Puppet: A Web-Based Kinesthetic Teaching System for Designing Robot Gestures Without Code", "short": "Jazzy Puppet", "track": "Demo", "tag": "技术+互动", "kind": "工具/平台", "one_line": "浏览器里用手掰机器人录手势、回放并编排，零代码、免安装，JSON 配置可换机器人", "contributions": ["免安装的网页端动觉示教系统，非技术者徒手设计表达性手势", "JSON 运行时机器人抽象，Dynamixel 机器人热切换无需改固件", "保留原始时序的回放，并可与打印机等外设编排成多模态行为"], "logic": ["机器人进日常，行为需人因专家设计", "现有工具门槛高，专家被挡在外", "优化轨迹太僵硬，丢掉生物运动感", "提出徒手示教、免装、跨硬件方案", "两台异构机器人证明可移植", "现场三步体验，展望开源工具包"], "why_accepted": ["紧扣 HRI 2026 主题 Empowering Society，主打让治疗师参与设计", "Demo 可玩性极强：观众亲手掰机器人、马上回放，几分钟内完成完整闭环，最适合展台", "Raspberry Pi + Dynamixel 低成本，网页+JSON、计划开源，好复现"], "takeaway": "用编号步骤写观众在展台上的完整操作路径，并单独交代公开展示的安全措施", "podcast": "如果你想让一台机器人点个头，显得有点害羞，又有点真诚，你得会什么？按现在的主流做法，你大概得会 ROS、会写 Python，还得懂逆运动学。可真正懂“害羞的点头长什么样”的人，往往是治疗师、老师、舞者，他们偏偏不写代码。今天聊的这篇 HRI 2026 的 Demo 论文，Jazzy Puppet，就是冲着这个矛盾来的。\n\n它的思路特别直白：别写代码了，直接用手掰。系统把机器人切到低扭矩的“放松”模式，你像摆弄木偶一样握着它做一遍动作，系统高频记录每个关节的位置、电流和时间戳，然后原样回放。整套东西跑在一块 Raspberry Pi 上，界面是浏览器里的网页，用户端什么都不用装。\n\n这里有个容易被忽略的技术点。传统的运动规划，比如 RRT 或者 IK 求解，追求的是最快、最平滑、抖动最小，这对工厂抓取很好，但对社交来说太干净了，人的动作里那些小停顿、小节奏全没了。Jazzy Puppet 回放时只用一个速度倍率 alpha，统一缩放时间和舵机速度，不重新规划轨迹，所以你手上那点犹豫和节奏能被保留下来，放快放慢都还是“你的”动作。\n\n第二个设计是通用性。每台机器人用一份 JSON 描述：舵机编号、位置限制、初始姿态、有没有外设。只要是 Dynamixel 舵机的机器人，换一份 JSON 就能用，固件不用改，运行时还能热切换。论文为了证明这一点，带了两台长得完全不一样的机器人：一台是两个舵机的桌面打印机机器人，能一边点头一边吐出一张写着鼓励话语的小纸条；另一台是四自由度机械臂，可以编排更复杂的操作序列。还有一个叫 Jazzy Sequencer 的可视化界面，把录好的动作和打印动作像积木一样串起来。\n\n那它为什么能中？我觉得有三点。第一，它把当年大会主题 Empowering Society 直接写进了开头和结尾，论点就是“让更多职业的人参与设计机器人行为”，契合度一眼可见。第二，它天生适合展台。观众走过来，选一台机器人，亲手掰一个动作，几秒后看机器人自己复现，再串成一段带打印的小表演，几分钟就完成一个完整闭环。审稿人读到这里，脑子里已经有画面了。而且打印机机器人那张小纸条很聪明，它让一个只有两个关节的小东西也有了“说话”的通道，观众能带走一点实物，记忆点就有了。第三，硬件便宜、通用，网页加 JSON 的架构容易复现，作者还承诺最终开源，这类工具型 Demo 一向受欢迎。\n\n论文本身也有值得学的写法。它在 Demo 描述那一节用编号列出观众的三步操作，紧接着交代急停、温度监控、EEPROM 限位全程开启，说明可以在公开场合连续运行。很多学生写 Demo 只讲系统多厉害，忘了回答审稿人最实际的问题：展台上到底怎么玩，安不安全。另外它在未来工作里很坦诚，承认高自由度机器人很难靠一双手同时掰动多个关节，这种具体的局限反而让人更信任。\n\n当然，这篇也有短板：没有任何用户研究数据，“非专家也能用好”目前还是一个主张。作者也没回避，直接把用户长期使用研究列为下一步，还说清楚想观察哪些问题：大家会攒出什么样的手势“词汇表”，还缺哪些功能。对 Demo Track 来说，能让人现场亲手验证，本身就是最好的证据。\n\n所以给准备投 2027 的你一个启发：把观众在你展台前的那几分钟，一步一步写出来。审稿人能在脑子里玩一遍，你就成功了一半。", "notes": [{"sec": "Figure 1", "sum": "Teaser 两图：用户分别在四自由度机械臂和打印机机器人上手把手编排动作", "role": "首屏展示交互方式与两种载体", "good": "图里是人手直接握机器人，不读正文也能看懂“徒手示教”", "rects": [[1, 51.8, 332.8, 538.4, 363.4]], "page": 1, "y": 334.8}, {"sec": "Abstract", "sum": "依次交代痛点、系统、特性（浏览器、JSON、Dynamixel、外设）与演示内容", "role": "压缩全文主线", "good": "末句写明“将在两台机器人上演示什么”，Demo 摘要该有的承诺", "rects": [[1, 51.8, 362.4, 298.3, 497.2]], "page": 1, "y": 364.4}, {"sec": "1 Introduction", "sum": "HRI 从工业走进日常；非语言行为需人因专家塑造，但修改仍依赖技术人员", "role": "立痛点并挂会议主题", "good": "开篇引用当年大会主题，让审稿人一眼看到契合度", "rects": [[1, 315.6, 393.0, 562.4, 582.6]], "page": 1, "y": 395.0}, {"sec": "1 Introduction", "sum": "软件已有无代码工具，机器人手势却缺；ROS/C++ 门槛把治疗师、教师挡在门外", "role": "用类比定位缺口", "good": "列出具体被排斥的职业，把“可及性”变成可想象的用户", "rects": [[1, 316.0, 579.3, 562.4, 703.1], [2, 51.5, 83.6, 298.3, 152.6]], "page": 1, "y": 581.3}, {"sec": "1 Introduction", "sum": "RRT、IK 追求最小抖动与时间，缺乏生物运动的噪声和节律，削弱社会临场感与信任", "role": "补第二个痛点：表达性", "good": "先承认优化轨迹对工业有用，再指出与社交需求相悖，论证不偏激", "rects": [[2, 51.8, 149.4, 298.3, 382.8]], "page": 2, "y": 151.4}, {"sec": "2 System Overview", "sum": "Pi 网页端、OpenCR 固件、舵机三层；JSON 描述机器人，可热切换保安全", "role": "给出系统概览", "good": "硬件型号写到具体板卡，审稿人能判断可复现性", "rects": [[2, 51.7, 677.4, 298.3, 702.6], [2, 315.6, 281.9, 562.4, 460.5]], "page": 2, "y": 283.9}, {"sec": "1 Introduction", "sum": "浏览器运行、徒手“演”动作、兼容 Dynamixel，缩小工程师与专家的鸿沟", "role": "亮出方案与差异点", "good": "两个“Unlike…”分别对比工业示教与 LfD 工具，差异点一目了然", "rects": [[2, 51.8, 379.5, 298.3, 656.8]], "page": 2, "y": 381.5}, {"sec": "Figure 2", "sum": "Jazzy Sequencer 界面截图，用节点可视化编排动作与打印", "role": "证明“无代码”有界面支撑", "rects": [[2, 316.0, 243.9, 562.4, 269.0]], "page": 2, "y": 245.9}, {"sec": "2.1 Kinesthetic Teaching Pipeline", "sum": "低扭矩模式下徒手引导，高频采样加轻度滤波；回放按速度倍率 α 统一缩放时间与速度", "role": "交代核心技术机制", "good": "一个公式说清回放逻辑，短篇里技术深度靠公式而非长篇描述", "rects": [[2, 315.6, 481.1, 562.4, 596.5]], "page": 2, "y": 483.1}, {"sec": "2.1 Kinesthetic Teaching Pipeline", "sum": "与重新规划时序的规划器不同，该做法跨速度保留微小变化；外设可编排且不改核心管线", "role": "回扣表达性痛点", "rects": [[2, 315.5, 593.1, 562.4, 706.3]], "page": 2, "y": 595.1}, {"sec": "3 Example Embodiment / 3.1", "sum": "两舵机桌面打印机机器人：点头、前倾等手势与打印鼓励文字同步，打印不影响动作时序", "role": "用实例展示多模态编排", "good": "非人形、低自由度载体，凸显“任何人都能做”", "rects": [[3, 51.4, 110.3, 298.3, 312.8]], "page": 3, "y": 112.3}, {"sec": "3.2 4-DoF Robotic Arm", "sum": "同一软件栈换一份 JSON 驱动四舵机机械臂，运行时与打印机机器人热切换", "role": "证明跨载体可移植", "good": "挑两台差异大的机器人，用对比代替空喊“硬件无关”", "rects": [[3, 51.5, 333.4, 298.3, 446.3]], "page": 3, "y": 335.4}, {"sec": "4 Demo Description", "sum": "观众三步：选机器人→徒手教手势→回放并编排（可加打印）；急停、温度监控全程开启", "role": "定义现场体验流程", "good": "编号步骤加安全措施，展台怎么跑、是否安全一次答完", "rects": [[3, 51.8, 479.9, 298.3, 695.2]], "page": 3, "y": 481.9}, {"sec": "5 Discussion", "sum": "强调无需规划器/IK；把“机器人怎么动”与“动作怎么创作”分离", "role": "提炼设计理念", "good": "一句二分法概括架构价值，便于审稿人记住", "rects": [[3, 316.0, 97.3, 562.4, 188.3]], "page": 3, "y": 99.3}, {"sec": "5 Future Work", "sum": "已用于学术研究；计划做长期用户研究、扩展硬件与多机、加编辑工具并开源", "role": "补局限并给出路线", "good": "坦承高自由度机器人徒手示教不现实，局限写得具体可信", "rects": [[3, 315.6, 185.0, 562.4, 440.3]], "page": 3, "y": 187.0}], "pages": [{"img": "pages/3794576-p1.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794576-p2.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794576-p3.jpg", "w": 612.0, "h": 792.0}], "pdf": "pdf/3794576.pdf"}, {"id": "3794578", "title": "Demonstrating Plant-Inspired Robots for Ambient HRI", "short": "Plant Robots", "track": "Demo", "tag": "技术+互动", "kind": "交互方法/范式", "one_line": "把植物隐喻做成叶、茎原语和两台植物机器人，现场演示低打扰的环境式HRI", "contributions": ["叶、茎两种3D打印机械原语，可复用为植物式机器人积木", "Snake Plant与Flower Plant两台原型，组合原语生成缓慢姿态", "三站式现场体验+视频故事板+开源设计文件与搭建说明"], "logic": ["主流HRI偏社交、高注意力", "环境式机器人缺设计词汇与范例", "植物隐喻补位：慢、低打扰、可解读", "叶茎原语组合成植物角色", "三站点让观众亲手操作与触发", "开源资料邀请复用，扩展词汇"], "why_accepted": ["与同年主会RtD全文[2]配套：论证在全文，Demo只负责让人摸到，定位干净", "非拟人、环境式机器人是HRI近年审美转向，植物隐喻新鲜且路人一眼能懂", "TPU打印+拉绳等低成本机构，可手动操作、开源可复现，摊位体验门槛低"], "takeaway": "按“原语站→组合站→愿景展板”分层布展，写清观众每站能做什么、多久", "podcast": "如果你桌上有一盆植物，它会在你驼背的时候，悄悄把叶子往一边倾一下——你会觉得被提醒了，还是被冒犯了？今天聊的这篇 HRI 2026 的 Demo，就在认真回答这个问题。Johns Hopkins 的 Victor Nikhil Antony 和 Chien-Ming Huang 做了一组植物机器人，题目叫 Demonstrating Plant-Inspired Robots for Ambient HRI。\n\n先说他们想挑战什么。过去二十年，HRI 里最典型的机器人都很有社交感：会说话、会看你、会做手势，长得像人或者像宠物。这条路线很有效，但也带来一个默认设定：交互是短时间、高强度、需要你全神贯注的。可如果机器人要长期待在家里、待在办公桌上，它也许不该一直抢你的注意力。作者的判断是：这类环境式、慢节奏、低打扰的机器人，我们还缺一套设计词汇，也缺看得见摸得着的范例。\n\n他们给出的答案是植物。植物不说话，但会慢慢转向光、会蔫、会舒展，它影响氛围、影响作息，却从不要求你回应。作者在同年主会上已经发了一篇 research through design 的全文，从植物里提炼出叶、茎、花、花盆这几种设计原语。这篇 Demo 的任务很单纯：把这些东西搬到会场，让人亲手摸。\n\n系统本身很朴素。叶片用 TPU 3D 打印，内部有三角楔形结构，平时自然卷曲；沿着叶脉穿一根线，一拉就展平，一松又卷回去，像植物从蔫到精神。茎借用了软体机器人里的同心波纹管，内管相对外管推拉，就能往两个方向弯。拿这两块积木，他们拼出两台原型。Snake Plant 把三片叶子装在一个略微倾斜的顶盖上，花盆一转，叶子就整体朝某个方向偏，再配合卷叶，能做出缓慢摇摆、倾身再回正、小小的庆祝脉动。Flower Plant 是一根驱动茎顶着带 LED 的花，花盆可以旋转，它可以朝向正在说话的人，或者往一个比较安静的人那边微微倾一下，像在说“你也在这里”。还有个小细节：花盆上有镂空花纹，作用不是好看，而是让很小的转角也能被看见。为动作的可读性服务，正是环境式机器人最难做好的地方。\n\n现场怎么玩？三个站点。第一站是原语，你自己拉线让叶子卷起来，握着把手让茎弯下去；第二站和第三站，按一下就能触发大约 60 秒的脚本动作。旁边有笔记本循环播放想象场景的视频，有故事板和爆炸图，还有二维码，扫一下就能拿到设计文件和搭建说明。这种安排的好处是，观众先看懂单个零件怎么动，再看它们组合成一个角色，最后看到它可能走进的生活场景，理解是一层一层叠上去的。\n\n为什么能中？我看有三点。第一，它和主会全文配套，理论和研究过程在全文里已经讲透，Demo 只需要解决让人体验这一件事，定位非常干净。第二，非拟人、环境式机器人是 HRI 这几年明显的审美转向，而植物这个隐喻新鲜、直观，路过的人一眼就懂，不需要讲解五分钟。第三，材料就是 TPU 和 PET-G 打印件加拉线，成本低、能上手、还开源，非常符合 Demo track 对可现场体验、可复现的偏好。另外作者还主动写了一句：目标不是展示任务功能。这一句提前挡掉了“这东西有什么用”的质疑。\n\n给准备投 2027 Demo 的同学一个可以直接抄的写法：把你的展位按单元、组合、愿景三层来组织，写清楚观众在每一站能亲手做什么、要花多长时间。审稿人读完就能在脑子里把你的摊位走一遍，这比任何形容词都有说服力。\n\n好的机器人，有时候不是更会说话，而是更懂得安静地待在你旁边。", "notes": [{"sec": "Figure 1", "sum": "真实植物→手绘草图→两台原型→纠正驼背的使用想象，一图串起RtD流程", "role": "Teaser交代研究脉络", "good": "箭头三段式把灵感-原型-场景压进一张图，审稿人秒懂", "rects": [[1, 89.4, 281.6, 336.0, 308.1], [1, 51.8, 319.0, 560.2, 360.6], [1, 401.8, 256.9, 560.2, 308.1]], "page": 1, "y": 258.9}, {"sec": "Abstract", "sum": "列出原语、Snake、Flower三个站点，观众可做的操作及配套展材", "role": "等同演示清单", "good": "用(1)(2)(3)编号站点，摘要本身就是布展说明", "rects": [[1, 51.4, 359.6, 297.6, 516.0]], "page": 1, "y": 361.6}, {"sec": "1 Introduction", "sum": "HRI主流是会说话、注视的拟人/拟动物机器人，偏短时高强度交互", "role": "立对照面", "good": "先肯定主流有效再点出局限，批评不树敌", "rects": [[1, 316.0, 412.4, 561.6, 514.1]], "page": 1, "y": 414.4}, {"sec": "1 Introduction", "sum": "环境式、非拟人机器人兴起，但缺低需求、慢节奏的设计词汇与范例", "role": "定位缺口", "rects": [[1, 315.6, 511.1, 561.7, 612.7]], "page": 1, "y": 513.1}, {"sec": "1 Introduction", "sum": "植物天然低打扰、节奏慢；前作用RtD提炼出叶、茎、花、盆原语", "role": "引出隐喻与前作来源", "good": "一句引用主会全文[2]，Demo无需重复论证", "rects": [[1, 316.0, 609.7, 561.7, 711.3], [2, 51.8, 83.7, 296.2, 108.6]], "page": 1, "y": 611.7}, {"sec": "2 System Overview / Figure 2", "sum": "三片叶装在倾斜顶盖上，花盆旋转带动叶片整体偏向；附爆炸图", "role": "展示原语如何组合", "good": "用倾斜顶盖这一几何小设计解释动作来源，具体可信", "rects": [[2, 64.1, 379.8, 283.7, 589.4], [2, 316.0, 83.7, 561.7, 174.4]], "page": 2, "y": 85.7}, {"sec": "1 Introduction", "sum": "把原语和原型交到参会者手里，目标是展示交互词汇而非任务功能", "role": "声明Demo目标与边界", "good": "主动说“不做任务功能”，提前挡掉“有什么用”的质疑", "rects": [[2, 51.8, 105.6, 297.6, 207.2]], "page": 2, "y": 107.6}, {"sec": "2 System Overview", "sum": "TPU叶片靠楔形结构自然卷曲，沿叶脉拉绳展平、松开回卷", "role": "核心机构一", "good": "机制写到可复刻，并落回“枯萎、振作”等表达语义", "rects": [[2, 51.6, 228.4, 297.6, 362.7]], "page": 2, "y": 230.4}, {"sec": "2 System Overview", "sum": "借软体/连续体机器人的同心波纹管，内外管相对推拉产生双向弯曲", "role": "核心机构二", "rects": [[2, 51.5, 598.7, 297.6, 711.3]], "page": 2, "y": 600.7}, {"sec": "2 System Overview", "sum": "盆转+卷叶组合出摇摆、倾身回正、庆祝脉动，设想用于纠姿与作息提示", "role": "动作映射到应用场景", "rects": [[2, 316.0, 171.3, 561.6, 240.1]], "page": 2, "y": 173.3}, {"sec": "2 System Overview / Figure 3", "sum": "单根驱动茎+LED花+可转花盆，被动叶片随动，花纹盆放大转角", "role": "介绍第二台原型", "rects": [[2, 316.0, 237.1, 560.2, 485.6]], "page": 2, "y": 239.1}, {"sec": "2 System Overview", "sum": "茎弯+盆转组合成朝向说话者、照顾安静者、指向桌上物体等手势", "role": "给出社交线索用途", "good": "“不抢话、只暗示”一句点明环境式交互定位", "rects": [[2, 316.0, 497.2, 561.7, 576.9]], "page": 2, "y": 499.2}, {"sec": "3 Demonstration Plan", "sum": "Demo分实体操作站点和视觉展材两部分，站点从单元到组合", "role": "给布展总框架", "rects": [[2, 316.0, 598.7, 561.7, 678.5]], "page": 2, "y": 600.7}, {"sec": "3 Demonstration Plan", "sum": "观众拉绳卷叶、握把手弯茎，直接感受材料与运动学", "role": "第一站：原语体验", "rects": [[2, 316.0, 675.5, 560.2, 711.3], [3, 51.6, 93.6, 297.4, 140.5]], "page": 2, "y": 677.5}, {"sec": "3 Demonstration Plan", "sum": "Snake站触发约60秒脚本动作；Flower站触发朝向、倾身、呈现及灯光", "role": "第二三站：组合体验", "good": "写明时长与可触发动作，评审能估算体验节奏", "rects": [[3, 51.5, 137.5, 297.6, 250.1]], "page": 3, "y": 139.5}, {"sec": "3 Demonstration Plan", "sum": "笔记本循环播放想象场景视频，展板展示爆炸图、变体与未到场原型", "role": "补足现场看不到的愿景", "rects": [[3, 51.8, 247.1, 297.6, 315.8]], "page": 3, "y": 249.1}, {"sec": "3 Demonstration Plan", "sum": "二维码链接设计文件、搭建说明和示例行为，鼓励改造复用", "role": "以开源收束", "good": "结尾落在“你也能做”，把一次展示变成持续传播", "rects": [[3, 51.8, 312.8, 296.0, 370.6]], "page": 3, "y": 314.8}], "pages": [{"img": "pages/3794578-p1.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794578-p2.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794578-p3.jpg", "w": 612.0, "h": 792.0}], "pdf": "pdf/3794578.pdf"}, {"id": "3794579", "title": "Meet IRIS: An Interactive Robotic Experience for Exploring Life Purpose", "short": "IRIS", "track": "Demo", "tag": "互动导向", "kind": "完整机器人系统", "one_line": "在QT机器人上用脚本提问+GPT追问，陪老人回顾往事、探索ikigai", "contributions": ["与11位老人两年纵向小组共创，贴合认知与情感需求", "结构化人工提问+AI追问，实时个性化的反思对话", "识别并回应回忆中苦乐参半（bittersweet）的复杂情绪"], "logic": ["人设：帮老人找ikigai的机器人", "两年共创+美日900人，立可信度", "脚本兜底+GPT追问，讲清怎么跑", "缺口：旧技术只管回忆不管情绪", "按评审项逐条答重要性与实用性", "帐篷+耳麦解决会场噪声与安全", "机器人谈“死亡”反转收尾"], "why_accepted": ["老龄化+包容性：覆盖到中度失智老人，美日900+人真实部署，说服力远超实验室原型", "LLM具身化但可控：人写脚本兜底、GPT只做追问，契合HRI对安全LLM对话的偏好", "现场有钩子：机器人谈自身“死亡”、观众变倾听者，Demo区少见的情感体验"], "takeaway": "把CFP评审项（Novelty/Importance等）直接当小标题", "podcast": "如果有一天，一台两英尺高的机器人对你说：我也会“死”，你会怎么回应它？这是HRI 2026一篇Demo论文给现场观众准备的结尾。论文叫Meet IRIS，来自印第安纳大学Selma Šabanović和David Crandall的团队。\n\nIRIS是Interactive Robot for Ikigai Support的缩写。Ikigai是日语里的“生き甲斐”，大概可以理解成活着的意义、每天起床的理由。IRIS的任务，就是陪老年人聊天，帮他们回看人生里重要的人和事，想清楚自己现在的价值在哪。\n\n硬件很朴素，直接用LuxAI的QTrobot，一个桌面人形机器人，脸是一块屏幕，能做表情，手和头能动。软件是Python写的自主程序，接OpenAI的GPT-4。关键设计在于：不是让大模型自由发挥，而是“脚本问题加AI追问”。先由人设计好结构化问题，比如引导式反思、分享一张有意义的老照片、开放聊天；老人回答后，再由GPT生成追问；老人想不起来的时候，机器人会给提示。长期使用时，它还会记住老人以前说过的事，按照ikigai的常见来源，比如人际关系、爱好、重要的人，建一个画像，给出个性化建议。\n\n那它为什么能中？我觉得有三点。\n\n第一，背后是一条很长的研究线。IRIS不是为Demo临时拼的，而是两年“纵向小组”共创的结果：11位老人和研究者每月见面一到两次，一起迭代机器人。论文里一张时间线图，从2021年访谈、2022年Wizard-of-Oz照片活动、2023年自主版本评估，到2024年长期部署，一步步排开。再加上一句：美国400多位、日本500多位老人用过，从健康到中度失智都有。三页纸里，这几句话就把可信度拉满了。而且它的每个设计点都挂着一篇自己的前作：HRI 2024讲共创方法，RO-MAN 2024讲自主对话，CHI 2025讲复杂情绪。评审一看就知道，这是一个成熟项目在会场的一次集中展示，而不是一个还没跑通的点子。\n\n第二，它找到了一个情感上的缺口。以前的回忆类技术大多只关注“想起来”，但团队在CHI 2025的研究里发现，回忆常常是苦乐参半的，也就是bittersweet：想起老伴、想起身体还好的时候，开心里夹着悲伤。IRIS把识别和回应这种复杂情绪当成设计目标，这比单纯陪聊深了一层，也正好踩在HRI这几年对老龄化、包容性和情感交互的关注点上。\n\n第三，现场体验设计得很用心。Demo区很吵，他们就把机器人放进一个帐篷里，减少视觉干扰；给参与者配音频设备，因为以前的Demo证明噪声会严重拉低体验；还明确写了机器人动作不会碰到人。互动流程也有起承转合：先简单建立关系，再引导你聊价值、快乐和角色；IRIS还会讲讲自己的“生活”，因为老人们说机器人多透露一点自己，人才愿意多说。最后，IRIS会谈到机器人的死亡，而这个话题本身就是老人在共创时提出来的。这一刻角色反转，你从被倾听的人，变成倾听机器人的人。对一个只有几分钟的Demo来说，这是非常强的记忆点。你可以想象，在一个满是机械臂和四足狗的大厅里，钻进帐篷和一个小机器人聊人生，这种反差本身就会让人愿意排队。\n\n给准备投HRI 2027 Demo的同学一个启发：看看它的小标题，Novelty、Importance、Usefulness、Set up、Interactive task，几乎就是把评审标准原封不动当成章节名。评审拿着清单打分时，每一项都能直接找到答案。另外，Set up一节别只列硬件，要像他们一样回答两个问题：在嘈杂的会场怎么保证体验，安全怎么办。\n\n当然也有可以挑的地方，比如正文写GPT-4，引用的却是GPT-4o，情绪识别具体怎么实现也没交代。但Demo赛道看重的，是你能不能带来一段让人记住的现场体验。IRIS的答案是：让机器人先说出自己的脆弱，人才会认真想自己的意义。", "notes": [{"sec": "Figure 1", "sum": "三张实景照：养老院小组活动、一对一交流、幼儿园孩子探访失智照护区", "role": "用真实部署证明可落地", "good": "首图放真实场景而非机器人特写，一眼看出用户是谁", "rects": [[1, 51.5, 394.4, 562.4, 446.4]], "page": 1, "y": 396.4}, {"sec": "Abstract", "sum": "QT机器人+脚本/AI追问，共创设计，接住苦乐情绪；Demo引导思考无常", "role": "一段讲完系统+卖点+现场体验", "good": "用“For the interactive demo”一句交代观众体验", "rects": [[1, 51.8, 445.4, 298.3, 624.0]], "page": 1, "y": 447.4}, {"sec": "1 Robot Design and Functionality", "sum": "IRIS定位为融入老人生活的对话机器人，基于商用QT（表情屏、可动头臂、音视频）", "role": "给出系统概览", "rects": [[1, 316.0, 616.1, 562.4, 711.6]], "page": 1, "y": 618.1}, {"sec": "1 Robot Design and Functionality", "sum": "两年、11位老人每月1–2次纵向小组迭代设计，多场景测试，均经IRB批准", "role": "交代设计来源与伦理", "good": "用具体数字（2年/11人/每月1–2次）替代“我们做了用户研究”", "rects": [[2, 51.5, 83.6, 298.3, 218.4]], "page": 2, "y": 85.6}, {"sec": "1 Robot Design and Functionality", "sum": "GPT-4自主程序跑三类活动（反思/照片/闲聊），长期记忆建ikigai画像", "role": "说明交互机制与个性化", "good": "每个设计点都挂一篇前作引用，三页纸也显得根基扎实", "rects": [[2, 51.8, 215.1, 298.3, 437.6]], "page": 2, "y": 217.1}, {"sec": "2 Novelty", "sum": "对比传统回忆技术：共创+人工提问配AI追问；美日900+老人用过", "role": "立新颖性与规模", "good": "新颖性段落末尾直接甩部署人数，用规模堵“只是原型”的质疑", "rects": [[2, 51.5, 451.8, 298.3, 558.1]], "page": 2, "y": 453.8}, {"sec": "2 Novelty", "sum": "前作发现回忆会引出悲伤、思念；以往HCI/HRI只重回忆本身，忽略情绪复杂性", "role": "定位研究缺口", "good": "用自己CHI’25结果引出缺口，缺口与前作一体化", "rects": [[2, 51.8, 554.9, 298.3, 711.6]], "page": 2, "y": 556.9}, {"sec": "2 Novelty", "sum": "把共创、自适应AI对话、情绪回应三点打包成独特性", "role": "收束新颖性", "good": "一句话三要素，评审可直接摘抄进评语", "rects": [[2, 316.0, 83.6, 562.4, 130.7]], "page": 2, "y": 85.6}, {"sec": "3 Importance", "sum": "反思人生意义关乎老人福祉；情绪感知型机器人可补充人类照护", "role": "回应评审“重要性”项", "rects": [[2, 316.0, 136.7, 562.4, 265.0]], "page": 2, "y": 138.7}, {"sec": "4 Usefulness", "sum": "回忆卡壳时给提示、适配认知水平，为照护者提供稳定补充", "role": "回应评审“实用性”项", "rects": [[2, 315.7, 270.9, 562.4, 399.2]], "page": 2, "y": 272.9}, {"sec": "5 Set up", "sum": "QTrobot规格：屏幕脸、深度相机、麦克风阵列，可接外置麦和控制板", "role": "让评审判断能否搬到现场", "rects": [[2, 315.5, 405.2, 562.4, 522.5]], "page": 2, "y": 407.2}, {"sec": "5 Set up", "sum": "机器人放帐篷内隔绝干扰，人机保持固定距离，动作不接触参与者", "role": "解决现场环境与安全", "good": "主动写安全边界，提前消解评审对实体机器人的顾虑", "rects": [[2, 315.6, 519.2, 562.4, 588.3]], "page": 2, "y": 521.2}, {"sec": "5 Set up", "sum": "与受控实验不同，会场噪声大，按需提供音频设备；前次Demo已证实噪声伤体验", "role": "预判现场风险", "good": "引用自己踩过的坑，显得Demo经验老到", "rects": [[2, 316.0, 585.0, 562.5, 654.0]], "page": 2, "y": 587.0}, {"sec": "6 Interactive task", "sum": "研究中先建关系、设预期才能聊深；Demo会调整流程以在嘈杂环境保留情感投入", "role": "把实验经验迁移到Demo", "rects": [[2, 316.0, 660.0, 562.4, 711.6], [3, 51.5, 245.5, 298.3, 303.6]], "page": 2, "y": 662.0}, {"sec": "Figure 2", "sum": "2021–24时间线：访谈共创→WoZ照片活动→自主评估+纵向小组→长期部署", "role": "可视化研究积累", "good": "一张时间线替代大段研究历史叙述，省篇幅", "rects": [[3, 51.8, 196.6, 562.4, 232.7]], "page": 3, "y": 198.6}, {"sec": "6 Interactive task", "sum": "引导聊价值与角色；IRIS自我披露“生活”；结尾谈自身死亡，观众转为倾听者", "role": "设计现场体验高潮", "good": "每个环节都注明来自老人建议，体验设计有出处不显随意", "rects": [[3, 50.8, 300.3, 298.3, 446.1]], "page": 3, "y": 302.3}], "pages": [{"img": "pages/3794579-p1.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794579-p2.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794579-p3.jpg", "w": 612.0, "h": 792.0}], "pdf": "pdf/3794579.pdf"}, {"id": "3794585", "title": "RelOrb: Relative Orbiting for Teleoperation", "short": "RelOrb", "track": "Demo", "tag": "技术导向", "kind": "交互方法/范式", "one_line": "VR遥操作中转动转台上的物体代替移动相机，实现绕物体轨道式观察", "contributions": ["提出RelOrb：靠相机与物体的相对坐标变化实现遥操作orbiting", "推导HMD逐帧位移映射为物体位移的坐标变换，含平移旋转与缩放", "用小机械臂作转台搭建原型，演示观察与配合抓取的操作例"], "logic": ["orbiting在CAD里直观", "搬到遥操作受物理约束", "移动平台/无人机贵且慢", "反转思路：转物体不转相机", "主动/被动变换等价→公式", "低成本原型+三类操作演示"], "why_accepted": ["“相机不动、物体反转”的点子反直觉又一图即懂，现场戴头显就能体验，契合Demo赛道", "交互落到active/passive变换的公式上，小系统有理论骨架，不是纯工程拼装", "Quest 3+myCobot+D405均为现成低价件易复现，抓取扩展呼应VR遥操作热点"], "takeaway": "借来其他领域熟悉的交互，指出搬到机器人上的卡点，用一张Teaser图画出反转解法", "podcast": "戴上VR头显，你往左绕一步，想看看远处那个零件的侧面——可现场的摄像头一动没动，转的是零件自己。今天聊的这篇HRI 2026 Demo，RelOrb，就是靠这个“偷换参照系”的小把戏，把CG软件里最常用的orbiting视角搬进了遥操作。\n\n先说痛点。在CAD或者Blender里，你拖一下鼠标，相机就绕着物体转一圈，前后左右全看清。这叫orbiting，做过三维建模的人几乎每天都在用，熟悉到根本意识不到它是一种交互技术。VR里也有人把它做成了不用手、只靠头动或眼动来控制的版本。但到了真实世界的遥操作里，想让相机绕着物体转，就得有移动底盘、长臂、甚至无人机，还得跟得上人头转动的速度。作者在Introduction里一口气点了NimbRo Avatar、Transfantome、无人机方案，结论很干脆：能做，但贵、重、反应慢。\n\n那RelOrb怎么破？核心就一句话：相机和物体之间，重要的只是“相对位置变化”。数学上有个老概念，active transformation和passive transformation——是物体在动，还是参考系在动，相对效果完全等价。于是远端用户这边，头显在动、虚拟物体不动；本地机器人那边，摄像头固定，让转台带着物体反向转。只要把头显每一帧的位移，经过相机坐标系换算成物体的位移，用户看到的画面就和“相机真的绕过去了”一模一样。论文用五个公式就把这件事讲完，还顺手指出：这个表达同时包含平移和旋转，甚至可以放大缩放。为了让读者别被矩阵吓跑，作者紧接着放了一张仿真对比图：左边是远端，相机绕着方块走；右边是本地，相机不动、方块在转；中间是两边看到的画面，完全一样。这一张图，等于把前面所有推导翻译成了一句人话。\n\n硬件简单得有点可爱：一台Intel RealSense D405，一台Elephant Robotics的myCobot 280小机械臂，末端粘个盘子当转台，再加一台Meta Quest 3，Unity写控制，Windows笔记本跑。演示有三段：兔子雕像绕z轴转，让你看到背面；椅子模型绕z轴加x轴组合转，相当于还能俯仰着看；最后再加一台小机械臂当操作手，用户用VR手柄去抓一个一开始藏在视线背后的物体。注意这一步的意义：如果只是看，大家会觉得这不过是个高级展示台；能配合抓取，说明这套视角控制可以真正服务于操作任务，这才回到了遥操作的本行。\n\n为什么能中？我站在Demo评审的角度说三点。第一，点子是“反直觉但一秒就懂”的，Figure 1左边一个固定相机，右边一个人绕着雕像走、雕像跟着转，评审扫一眼就明白，这在Demo赛道是巨大的优势。第二，它把一个交互问题落到了严谨的坐标变换上，不是纯拍脑袋，HRI评审喜欢这种“有理论骨架的小系统”。第三，硬件全是现成低成本件，会场搭起来不难，观众戴上头显就能亲手体验，这正是Demo最看重的可体验性。当然，它没有用户实验，转台也只适合能被抓起来摆弄的物体，但对三页的Demo来说，把概念、公式、原型、演示四件套讲清楚就够了。\n\n顺带说一句写法。这篇论文的结构非常标准：一段讲熟悉的技术，一段讲现有方案的代价，一段亮出自己的方案和交付物，然后概念、公式、用户视角、实现、演示依次展开，每一节都回指前面的图。三页纸没有一句废话，很适合当模板来拆。\n\n给准备投2027的同学一个启发：先找一个别的领域里大家习以为常的交互，比如CAD的orbiting，问一句“搬到机器人上卡在哪”，然后换个视角绕开那个卡点。再用一张Teaser图把这个反转画出来，你的Demo就已经赢了一半。\n\n所以，不必让相机去追物体，有时候让世界转过来就行。", "notes": [{"sec": "Figure 1", "sum": "左：固定相机对着转台上的物体；右：用户绕行时雕像随视角转动", "role": "首屏讲清核心反转", "good": "左右对照+前后左右四方位标注，不读正文也懂", "rects": [[1, 51.8, 370.8, 562.4, 423.3]], "page": 1, "y": 372.8}, {"sec": "Abstract", "sum": "orbiting难用于遥操作；RelOrb转物体代替动相机，交付四件套", "role": "问题-方案-交付物速览", "good": "末句四项交付物清单，与后文章节一一对应", "rects": [[1, 51.8, 422.3, 298.3, 535.2]], "page": 1, "y": 424.3}, {"sec": "1 Introduction", "sum": "定义orbiting，在CG/CAD与VR中广泛使用，但用于遥操作受物理约束", "role": "从熟悉技术引出痛点", "good": "先借读者已知的CAD体验建立直觉，再一句转折抛问题", "rects": [[1, 315.5, 500.1, 562.4, 623.9]], "page": 1, "y": 502.1}, {"sec": "1 Introduction", "sum": "现有方案靠移动底盘、多机器人或无人机扩视野，难达人速且响应慢", "role": "相关工作定位缺口", "good": "每个对比方案一句话点到为止，三页篇幅下很省字", "rects": [[1, 315.6, 620.6, 562.4, 711.6], [2, 51.8, 327.4, 298.3, 374.5]], "page": 1, "y": 622.6}, {"sec": "2.1 Concept", "sum": "主动与被动变换的相对效果等价，RelOrb据此连接远端与本地坐标系", "role": "建立理论依据", "good": "引用经典概念为新交互正名，提升方法可信度", "rects": [[2, 51.5, 565.8, 298.3, 711.6], [2, 315.7, 83.6, 562.4, 163.6]], "page": 2, "y": 85.6}, {"sec": "Figure 2", "sum": "四格图：远端HMD主动运动 vs 本地相机固定、物体被动运动", "role": "为公式提供视觉锚点", "good": "2×2布局让远端/本地、动前/动后同时对照", "rects": [[2, 51.8, 274.1, 298.3, 310.3]], "page": 2, "y": 276.1}, {"sec": "1 Introduction", "sum": "提出RelOrb：头部运动经坐标变换驱动转台，补偿旋转后呈现对应HMD画面", "role": "给出方案与贡献", "good": "限定适用前提“目标可被操纵”，主动交代边界", "rects": [[2, 51.4, 371.2, 298.3, 527.9]], "page": 2, "y": 373.2}, {"sec": "2.2 Coordinate Setup", "sum": "定义HMD、相机、物体坐标系，给出HMD第k-1到k帧的位移", "role": "形式化输入量", "rects": [[2, 316.0, 184.7, 562.4, 313.2]], "page": 2, "y": 186.7}, {"sec": "2.2 Coordinate Setup", "sum": "经本地相机坐标系把HMD位移的逆映射为物体单帧位移", "role": "核心映射公式", "rects": [[2, 316.0, 312.0, 562.4, 409.6]], "page": 2, "y": 314.0}, {"sec": "2.2 Coordinate Setup", "sum": "累乘得物体新位姿；公式同时含平移旋转，并允许缩放放大", "role": "收束公式并点出泛化性", "good": "一句话补出可缩放，为后续扩展留口子", "rects": [[2, 316.0, 408.7, 562.4, 501.1]], "page": 2, "y": 410.7}, {"sec": "2.3 User's Perspective", "sum": "远端相机动、本地物体动，两边相机画面一致（Fig.3仿真示例）", "role": "从用户视角验证等价", "good": "用仿真截图回指公式，把抽象推导落回“看到什么”", "rects": [[2, 316.0, 522.3, 562.4, 613.2], [3, 81.6, 182.4, 266.3, 196.6]], "page": 2, "y": 524.3}, {"sec": "3.1 System Components", "sum": "D405相机、myCobot末端装盘作转台、Quest 3，Unity控制关节角", "role": "交代可复现的实现", "good": "型号具体并附链接，评审可判断现场搭建难度", "rects": [[2, 316.0, 650.0, 562.4, 686.1], [3, 51.4, 207.2, 298.3, 449.6]], "page": 2, "y": 652.0}, {"sec": "3.2 Operation Examples", "sum": "兔子绕z轴看背面，椅子z+x轴组合转，另一机械臂抓取被遮挡物体", "role": "演示场景由易到难", "good": "从纯观察到观察+操作递进，展示方法可服务实际任务", "rects": [[3, 51.6, 480.3, 298.3, 626.1], [3, 360.4, 393.6, 515.8, 407.8]], "page": 3, "y": 395.6}], "pages": [{"img": "pages/3794585-p1.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794585-p2.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794585-p3.jpg", "w": 612.0, "h": 792.0}], "pdf": "pdf/3794585.pdf"}, {"id": "3794587", "title": "Suzume-chan: A Pet-as-a-Friend Plush Agent for Bedside Guidance and Nursing-Relevant Logging", "short": "Suzume-chan", "track": "Demo", "tag": "技术+互动", "kind": "完整机器人系统", "one_line": "床头麻雀毛绒玩偶，本地ASR+LLM+RAG答病人疑问，并以振动掩盖推理延迟", "contributions": ["全本地ASR–LLM–RAG毛绒代理，给病人按需语音讲解", "概念验证workshop：具身性如何影响对延迟、亲和与信任的感知", "提出用振动触觉反馈填补处理延迟，指导床边代理设计"], "logic": ["病人信息给得密又不合时", "护士难低成本掌握病人状态", "Paro类萌宠只管情绪不管信息", "提出双向中介毛绒代理", "workshop发现静止身体放大延迟", "Demo：降延迟+振动表状态"], "why_accepted": ["LLM具身化且全本地部署，直接回应医疗场景的隐私顾虑，技术选型与场景高度咬合", "从静态原型workshop反馈推出振动设计，迭代证据链清楚，Demo升级有据可依", "抱着玩偶提问、感受思考时的振动，现场体验门槛极低，适合Demo会场"], "takeaway": "把上一版原型暴露的用户痛点写成本次Demo的升级主线", "podcast": "想象一下你刚住进医院，护士在入院那天塞给你一沓说明：探视时间、检查前要禁食多久、药怎么吃。你当时又累又慌，根本记不住。到了半夜想问，只能按铃叫护士。这篇 HRI 2026 的 Demo 论文，就是想把这些问题交给床头一只麻雀毛绒玩偶来接。\n\n它叫 Suzume-chan，来自筑波大学 Yoichi Ochiai 的团队。Suzume 是日语里的麻雀。它只有手掌大，肚子里装着无线麦克风和扬声器，病人不用点屏幕、不用会用手机，直接对着它说话就行。后台是一台放在附近的主机：Apple 的端侧语音识别把话转成文字，交给开源大模型 gpt-oss-120B，再用 RAG 从医院自己的规程和日常指引数据库里检索答案，最后用 Style-Bert-VITS2 合成一个可爱的声音读出来。关键点是，整条链路都跑在本地网络里，病人的话不出院。\n\n作者给这件事起了个框架，叫 bidirectional mediation，双向中介。一头是病人随时能问、随时能听提醒；另一头是护士能拿到简洁的、跟护理相关的记录，比如病人反复问了什么、哪里显得困惑。Paro 那类海豹机器人证明了毛绒、萌的东西容易被病人接受，但它们只管情绪陪伴，不进信息系统。Suzume-chan 的定位就是把\"萌\"接进信息基础设施。\n\n不过这篇最值得学的不是系统，而是它怎么从一次小 workshop 里长出 Demo 的卖点。他们先拿一个不会动的静态原型去做概念验证，收集了 27 条反馈做质性编码，归出三类主题：具身和社会临场感最多，有 15 条；系统性能 11 条；信任与隐私只有 1 条。最有意思的发现是：玩偶越让人觉得亲切安全，它卡顿的时候就越尴尬。大模型推理要几秒，一个静止的毛绒玩具在那几秒里一动不动，人就会觉得它没听见、或者坏了。参与者自己就说，希望它在\"听\"和\"想\"的时候能有点小动作或者震动。\n\n于是作者把这条反馈直接变成了 Demo 的两项升级。第一，压延迟：缓存高频检索结果、让语音识别到大模型的交接更顺、降低语音合成的开销。第二，加一个小小的离心振动马达：听的时候轻轻脉冲，思考的时候持续柔和地震，开口说话前再轻推一下。目标是把沉默的等待变成\"它在认真想\"的互动瞬间。现场观众可以亲手抱着它提问，感受这些触觉信号会不会改变对响应速度和可信度的判断。\n\n为什么能中？我的判断有三点。一是踩中了 LLM 具身化，而且是全本地部署，正好回应医疗场景的隐私顾虑。二是问题来自真实病房，有护理负担这种实打实的痛点，还有一张床边照片。三是 Demo 本身可体验，抱一抱、问一句、感受一下震动，在会场里非常直观。当然也要看到短板，审稿人心里会打问号：标题里的护理记录在正文里几乎没有实现，workshop 的参与者是谁、多少人也没写清。但三页的 Demo 论文，评审更看重想法是否清楚、证据链是否自洽、现场是否好玩，细节可以留到后续的完整论文里再补。\n\n给准备投 2027 Demo 的你一个启发：别只罗列功能，把上一版原型暴露出的问题当成这一版 Demo 的主角。用户反馈里那句\"它卡住时我不知道它在干嘛\"，就是这篇论文的全部升级理由。顺带一提，他们在 Figure 1 里直接放了去年在 WISS 会场展示的照片，这也在告诉评审：这东西真的能搬到现场。\n\n毛绒的外壳负责让人愿意开口，振动负责让人愿意等。", "notes": [{"sec": "Figure 1", "sum": "左为本地LLM+RAG架构示意，右为在WISS 2025展示的手掌大实物", "role": "一图交代系统与已展示过", "good": "架构图+实物照并排，评审一眼看懂技术和形态", "rects": [[1, 51.8, 433.0, 562.4, 474.5]], "page": 1, "y": 435.0}, {"sec": "Abstract", "sum": "信息供给与获取错位→双向中介→毛绒信息枢纽→全本地管线→workshop发现", "role": "压缩全文论证链", "good": "用“mismatch”一词立问题，再命名框架，概念感强", "rects": [[1, 51.4, 473.5, 298.3, 597.3], [1, 316.0, 459.8, 562.4, 496.0]], "page": 1, "y": 461.8}, {"sec": "1 Introduction", "sum": "病人在精力最差时被一次性灌输密集信息，难以获取和记住", "role": "立病人侧痛点", "rects": [[2, 51.8, 97.3, 298.3, 199.2]], "page": 2, "y": 99.3}, {"sec": "1 Introduction", "sum": "护士需持续了解病人日常状态，却只能靠短暂交流推断", "role": "立护士侧痛点", "good": "两段对称写病人/护士，为“双向”埋伏笔", "rects": [[2, 51.8, 196.0, 298.3, 265.0]], "page": 2, "y": 198.0}, {"sec": "1 Introduction", "sum": "Paro等萌宠机器人被接受，但只做情绪陪伴，不进信息基础设施", "role": "借经典工作定位缺口", "good": "先肯定前作价值再一句However切出缺口", "rects": [[2, 51.8, 261.7, 298.3, 363.6]], "page": 2, "y": 263.7}, {"sec": "2 Study", "sum": "重述双方信息缺口，目标是检验毛绒能否成为双向中介", "role": "为研究定问题", "good": "与Intro几乎重复，篇幅紧时可删，反面教材", "rects": [[2, 51.8, 631.6, 298.3, 711.6], [2, 316.0, 309.0, 562.4, 378.0]], "page": 2, "y": 311.0}, {"sec": "1 Introduction", "sum": "提出Suzume-chan：免操作语音交互的手掌大毛绒，后端本地LLM+RAG", "role": "给出系统概览", "rects": [[2, 51.5, 360.3, 298.3, 495.1]], "page": 2, "y": 362.3}, {"sec": "1 Introduction", "sum": "三条贡献：本地系统、workshop洞见、振动反馈设计方向", "role": "明列贡献", "good": "First/Second/Third对应系统-发现-设计，可直接套用", "rects": [[2, 51.5, 491.9, 298.3, 593.7]], "page": 2, "y": 493.9}, {"sec": "Figure 2", "sum": "病床枕边放置Suzume-chan的实景照", "role": "证明场景真实可落地", "rects": [[2, 316.0, 278.8, 560.2, 293.0]], "page": 2, "y": 280.8}, {"sec": "2 Study", "sum": "静态原型workshop，27条反馈归三主题：具身15、性能11、隐私1（图3）", "role": "给出前期证据", "good": "给出编码计数，三页里也显得有实证", "rects": [[2, 315.7, 374.7, 562.4, 443.8], [3, 51.8, 193.2, 562.4, 218.4]], "page": 2, "y": 376.7}, {"sec": "2 Study", "sum": "亲和感让静止身体下的延迟更显眼，用户期待以动作/振动示意“在想”", "role": "提炼核心洞见", "good": "“功能需求而非审美选择”一句把发现拔高为设计主张", "rects": [[2, 314.9, 440.5, 562.4, 520.5]], "page": 2, "y": 442.5}, {"sec": "2 Study", "sum": "推出三条需求：全本地隐私、低延迟、具身线索掩盖延迟", "role": "承上启下接实现", "good": "需求编号后明说哪节解决哪条，结构清晰", "rects": [[2, 316.0, 517.2, 562.4, 586.2]], "page": 2, "y": 519.2}, {"sec": "3 Implementation", "sum": "内置麦克风扬声器；端侧ASR→gpt-oss-120B+RAG→TTS发声", "role": "交代硬件与技术管线", "good": "点名具体模型与版本，利于复现", "rects": [[2, 316.0, 620.6, 562.4, 711.6], [3, 51.8, 410.3, 298.3, 457.4]], "page": 2, "y": 622.6}, {"sec": "4 Demonstration", "sum": "离心振动马达：听时脉冲、想时持续、说前轻推，把沉默变互动", "role": "回应需求(3)，Demo卖点", "good": "三状态对应三种振动，具体到观众可预期的体验", "rects": [[3, 51.8, 635.3, 298.3, 693.4], [3, 316.0, 231.2, 562.4, 278.3]], "page": 3, "y": 233.2}, {"sec": "4 Demonstration", "sum": "现场展示延迟感知的触觉行为，邀观众评估即时感与信任；图4为WISS现场", "role": "说明现场怎么玩", "good": "把观众变成评估者，Demo兼具小型用户研究", "rects": [[3, 77.7, 380.8, 270.1, 395.0], [3, 315.6, 275.0, 562.5, 344.0]], "page": 3, "y": 277.0}, {"sec": "3 Implementation", "sum": "本地运行保隐私，但延迟可感知，静止身体让停顿更长", "role": "自曝短板引出Demo", "rects": [[3, 51.8, 454.1, 298.3, 512.2]], "page": 3, "y": 456.1}, {"sec": "4 Demonstration", "sum": "延迟优化三招：缓存高频检索、简化ASR–LLM交接、降低TTS开销", "role": "回应需求(2)", "rects": [[3, 51.5, 546.4, 298.3, 632.5]], "page": 3, "y": 548.4}, {"sec": "5 Conclusion", "sum": "workshop洞见+隐私底座，迈向从静态倾听者到主动可信中介", "role": "收束并重申愿景", "rects": [[3, 316.0, 364.9, 562.4, 455.8]], "page": 3, "y": 366.9}], "pages": [{"img": "pages/3794587-p1.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794587-p2.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794587-p3.jpg", "w": 612.0, "h": 792.0}], "pdf": "pdf/3794587.pdf"}, {"id": "3794588", "title": "Pax: A Queer-Affirming Robot Companion for the Home", "short": "Pax", "track": "Demo", "tag": "技术+互动", "kind": "完整机器人系统", "one_line": "把与酷儿成年人共创的需求落成一个LLM驱动、带安全护栏的居家虚拟陪伴机器人", "contributions": ["将LGBTQIA+参与式设计得出的需求转化为可运行的陪伴机器人原型", "LLM对话+情绪标签驱动具身表达+仅基于主动披露的记忆个性化", "针对酷儿话题调阈值的内容审核与去升级化安全护栏"], "logic": ["陪伴机器人进家，承担情绪支持", "酷儿群体受误称、抹除之害", "PD重要但酷儿视角缺席HRI", "前作访谈→非拟人外形+居家场景", "四个模块逐一对应社区需求", "现场可登录、可触发护栏的Demo"], "why_accepted": ["踩中HRI包容性/边缘群体热点，且有同届full paper的参与式研究背书，需求有出处", "LLM具身化做得克制：情绪标签、记忆、审核三层可控，正好回应LLM陪伴的安全焦虑", "Demo环节设计了可现场触发的onboarding与护栏脚本，观众能亲身体验核心卖点"], "takeaway": "每个技术模块都写成“用户需要X→所以我们做Y”，并配一个现场可触发的关键时刻", "podcast": "如果一个陪伴机器人第一次见你，问的不是“今天过得怎么样”，而是“我该怎么称呼你、你用什么代词”，你会不会觉得自己被认真对待了？今天聊的这篇 HRI 2026 Demo 叫 Pax，一个专门为 LGBTQIA+ 用户设计的居家陪伴机器人。\n\n先说背景。陪伴机器人正在进入家庭，承担情绪支持的角色。但对酷儿群体来说，现有 AI 有一堆老毛病：用错代词、误判性别、默认顺性别视角。HRI 社区很重视 participatory design，可酷儿的真实经验在研究里一直缺席。这个团队先和酷儿成年人做了一轮共同设计研究，那篇是同一届 HRI 的 full paper；这篇 Demo 的任务，就是把访谈结论变成一个真能跑起来的系统。换句话说，它回答的问题是：社区说出来的价值观，能不能一条条变成代码和外形？\n\nPax 长什么样？它目前是 Unity 里的一个 3D 虚拟机器人，放在一个卧室场景中。白色圆壳、锥形脑袋、黑色面罩上一对绿色眼睛，刻意不像人、也不像动物，避开任何性别暗示。这是参与者明确提出的：类人或拟动物的外形会让他们不舒服，还容易引出不健康的依赖。\n\n交互流程是这样的。登录之后，Pax 先走一段 scripted onboarding，问你的名字、代词和喜欢的交流风格。之后你可以打字，也可以说话，语音在本地用 Whisper 转写，再送到 FastAPI 后端，交给 GPT 系列模型生成回复。关键在于，LLM 每一轮还会从十个预设情绪里挑一个标签，比如 happy、sad、love，Unity 端把它映射成眼睛、手臂和姿态的动画。语言和身体表达因此是同步的，而且是受控的。注意这个取舍：他们没有让模型自由生成动作，而是限定在一个小词表里，好处是表现稳定、可预期，也方便后续扩展新的情绪状态。\n\n还有两个设计特别值得讲。第一是记忆：它只存你主动说出来的信息，放进 PostgreSQL 做向量检索，绝不推断。对酷儿用户来说，“系统猜你是谁”本身就可能是伤害，所以只记你亲口说的。第二是安全：所有输入都过 OpenAI Moderation API，但他们故意调高了 sexual 和 hate 类别的阈值，因为酷儿用户谈身份、谈身体的正常对话，很容易被误判成有害内容。一旦出现自伤或急性痛苦的信号，Pax 就切换到预设的支持性话术，鼓励你联系信任的人或专业资源，但不给临床建议。\n\n现场 Demo 怎么玩？观众可以用自己或访客身份登录，完整走一遍 onboarding，然后自由聊天；回访的人会发现 Pax 记得上次说过的事。作者还准备了一组脚本化提示词，专门用来触发安全护栏，让观众亲眼看到它怎么接住一句危险的话。\n\n为什么能中？我看有三点。第一，包容性和边缘群体是 HRI 近几年持续升温的方向，而它背后有一篇参与式设计研究撑腰，需求不是拍脑袋。第二，它把 LLM 具身化做得很克制，情绪标签、记忆、审核，每一层都对应一个社区需求，而不是在堆技术。第三，它坦白承认没有量化评估、目前只是虚拟形态，把目标定为证明可行性，这对 Demo 轨道来说既诚实又够用。审稿人不会因为三页纸里没有统计检验而扣分，反而会因为你夸大效果而起疑。\n\n给准备投 2027 的同学一个启发：把每个技术模块都写成“因为用户需要什么，所以我们做了什么”，再在 Demo 环节设计一个能现场触发的关键时刻，就像这里的护栏脚本。审稿人想看的不是功能清单，而是一条从需求一路走到体验的完整链路。\n\n一个不急着定义你、而是先问你想被怎样称呼的机器人，也许正是 HRI 该有的样子。", "notes": [{"sec": "Abstract", "sum": "与LGBTQIA+共创的陪伴机器人，Unity+FastAPI实现，带护栏与记忆", "role": "四句交代对象、实现与Demo重点", "good": "末句点明“本Demo展示什么”，直接对准Demo轨道的评审口径", "rects": [[1, 51.5, 295.6, 298.3, 397.5]], "page": 1, "y": 297.6}, {"sec": "1 Introduction", "sum": "陪伴机器人用于情绪支持；酷儿群体因歧视与孤立更需要；人会与代理建立关系", "role": "立需求、引出Pax", "good": "从泛人群收窄到酷儿群体，三步漏斗后立刻抛出系统名", "rects": [[1, 51.8, 607.8, 298.3, 643.9], [1, 316.0, 390.5, 562.4, 536.2]], "page": 1, "y": 392.5}, {"sec": "Figure 1", "sum": "左为卧室中的Pax渲染图，右为Unity↔FastAPI↔外部服务三栏架构图", "role": "一图同时给形象与架构", "good": "Teaser把“长什么样”和“怎么搭的”并排放，省掉第二张图的版面", "rects": [[1, 316.0, 350.5, 560.2, 375.7]], "page": 1, "y": 352.5}, {"sec": "1 Introduction", "sum": "陪伴涉及隐私与照护劳动；AI对酷儿存在误称、抹除；PD中酷儿视角缺席", "role": "定位风险与研究缺口", "rects": [[1, 316.0, 532.9, 562.4, 678.7]], "page": 1, "y": 534.9}, {"sec": "1 Introduction", "sum": "居家需求催生非拟人外形；列出LLM对话、记忆、onboarding、护栏", "role": "把访谈结论映射到系统模块", "good": "用“参与者强调…因此…”句式，让设计决策有出处", "rects": [[1, 316.0, 675.4, 562.4, 711.6], [2, 51.8, 83.6, 298.3, 163.6]], "page": 1, "y": 677.4}, {"sec": "2 System Overview", "sum": "输入过Moderation API；调高性/仇恨阈值防误判；高风险转预设话术", "role": "给出安全机制", "good": "“调阈值以免误伤酷儿话题”是细节里的洞见，最能体现领域理解", "rects": [[2, 51.8, 631.6, 298.3, 711.6], [2, 315.6, 83.6, 562.4, 174.6]], "page": 2, "y": 85.6}, {"sec": "2 System Overview", "sum": "Unity卧室场景中的白壳绿眼抽象机器人，靠眼睛、手臂、姿态表达", "role": "交代具身形态", "good": "外形描述后紧跟“刻意避免性别/动物线索”，把外观写成设计论证", "rects": [[2, 51.5, 193.2, 298.3, 306.1]], "page": 2, "y": 195.2}, {"sec": "2 System Overview", "sum": "文本或语音交互；登录后脚本化询问名字、代词、偏好风格", "role": "说明交互入口", "rects": [[2, 51.8, 302.8, 298.3, 382.8]], "page": 2, "y": 304.8}, {"sec": "2 System Overview", "sum": "本地Whisper转写→FastAPI→GPT回复并选10类情绪标签→驱动动画", "role": "讲清核心技术管线", "good": "列出全部10个情绪标签，具体到可复现，体现“受控”而非放任LLM", "rects": [[2, 51.5, 379.5, 298.3, 525.3]], "page": 2, "y": 381.5}, {"sec": "2 System Overview", "sum": "提取用户披露事实存入PostgreSQL，每轮向量检索后注入prompt", "role": "实现跨会话连续性", "good": "强调“只存显式披露、不推断”，把技术选择和伦理立场绑在一起", "rects": [[2, 51.8, 522.0, 298.3, 634.8]], "page": 2, "y": 524.0}, {"sec": "2 System Overview", "sum": "三者整合为可实时演示的原型，模块化便于扩展到实体机器人", "role": "收束架构、预埋扩展性", "rects": [[2, 316.0, 171.3, 562.4, 240.3]], "page": 2, "y": 173.3}, {"sec": "3 Demo Description", "sum": "观众以本人或访客身份登录，体验询问名字、代词的onboarding", "role": "设计现场第一触点", "rects": [[2, 316.0, 264.5, 562.4, 344.4]], "page": 2, "y": 266.5}, {"sec": "3 Demo Description", "sum": "自由对话中实时同步语音、文字、眼臂姿态；回访者可见记忆召回", "role": "展示完整交互闭环", "good": "按观众视角逐步写“能看到什么”，审稿人可脑补现场", "rects": [[2, 315.5, 341.2, 562.4, 475.9]], "page": 2, "y": 343.2}, {"sec": "3 Demo Description", "sum": "提供脚本化提示词触发自伤等护栏，演示支持性回应与转介", "role": "让安全机制可被看见", "good": "把不可见的后台机制设计成可触发的展项，值得照搬", "rects": [[2, 315.6, 472.7, 562.4, 585.5]], "page": 2, "y": 474.7}, {"sec": "4 Discussion", "sum": "个性化不是表层装饰；显式披露降低误称风险；抽象外形减少拟社会依赖", "role": "上升到设计原则", "rects": [[2, 315.7, 609.7, 562.4, 711.6], [3, 51.8, 83.6, 298.3, 163.6]], "page": 2, "y": 611.7}, {"sec": "5 Conclusion", "sum": "Pax证明身份肯定原则可落到架构与外形选择，指向更公正的居家HRI", "role": "拔高意义收尾", "rects": [[3, 51.8, 587.7, 298.3, 711.6], [3, 316.0, 83.6, 562.4, 163.6]], "page": 3, "y": 85.6}, {"sec": "4 Discussion", "sum": "各模块合力支持居家身份肯定；护栏证明温暖与约束可并存", "role": "回应LLM陪伴的伦理担忧", "rects": [[3, 51.8, 160.3, 298.3, 317.0]], "page": 3, "y": 162.3}, {"sec": "4 Discussion", "sum": "坦承无量化评估、仅虚拟形态；未来做居家长期研究与实体化", "role": "划定边界与后续", "good": "先主动说明“目标是可行性”，把缺评估合理化为Demo定位", "rects": [[3, 51.8, 313.8, 298.3, 547.2]], "page": 3, "y": 315.8}], "pages": [{"img": "pages/3794588-p1.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794588-p2.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794588-p3.jpg", "w": 612.0, "h": 792.0}], "pdf": "pdf/3794588.pdf"}, {"id": "3794589", "title": "Don’t Just Throw It: Empowering Society to Recycle Correctly with PERI, the Educational Robot Bin", "short": "PERI", "track": "Video", "tag": "互动导向", "kind": "交互方法/范式", "one_line": "做了一个会拒绝错误投放的教育型分类垃圾桶机器人，教路人正确回收", "contributions": ["提出Pedagogical HRI：机器人验证而非代替用户分类", "$250低成本PERI：YOLOv8视觉+本地LLM+2自由度分拣", "“教学式拒绝”模式：524次部署中80%投错者改正"], "logic": ["秘鲁回收率仅1.8%", "被动桶让人困惑，智能桶让人脱节", "PERI：从替你做转向教你做", "三模块低成本实现＋失败兜底", "教学式拒绝作为核心新意", "展会部署数据证明能教会人"], "why_accepted": ["紧扣大会Empowering Society主题：环保+教育+发展中国家语境", "$250、本地LLM隐私优先、524次公共场所部署，视频有真人反应可拍", "把功能提炼成可命名的交互范式“教学式拒绝”，升格为HRI设计贡献"], "takeaway": "给核心交互行为起个名字，挂一个经典理论，再配一个真实部署数字", "podcast": "秘鲁的垃圾回收率只有百分之一点八。一组秘鲁天主教大学的学生没有去造一个更聪明的分类垃圾桶，而是造了一个会“拒绝”你的垃圾桶。今天聊 HRI 2026 Video Track 的一篇三页短文：PERI，教育型机器人垃圾桶。\n\n先说它要解决什么。作者把现有方案分成两个极端：普通分类桶假设你懂分类，可大多数人并不懂，结果投错；全自动的智能垃圾桶替你分好了，物流问题解决了，人却被完全排除在外，下次还是不会。他们引用环境心理学里的 Intention-Action Gap：人们想回收，却被疲劳和看不懂的标识打败。于是 PERI 的定位很清楚，从 Service HRI，也就是“替你做”，转向 Pedagogical HRI，“教你做”。\n\n系统本身不复杂，三个模块。第一是视觉：Jetson Nano 加一个普通网络摄像头，跑自己训练的 YOLOv8，识别塑料、纸、纸板和一般垃圾四类，延迟大约 200 毫秒。为了对抗现场光线变化，他们在桶里装了内置照明，让光照和训练数据保持一致；置信度低于百分之六十，就进入“困惑状态”，请用户把东西拿清楚一点。第二是对话：语言模型直接部署在 Jetson Nano 本地，只说西班牙语，只聊分类这件事，语音和图像都不存储，这是一个刻意的隐私优先设计，在公共场所部署时很加分。第三是机械：一个两自由度的分拣机构。整机预算 250 美元，不含 Jetson 和摄像头。\n\n真正的看点在交互。用户可以选自动模式，让 PERI 自己分；也可以选手动模式，自己按按钮说“这是塑料”。如果你把塑料往纸类里放，PERI 会停下来，不执行，用一种不评判的语气提示你再想想。作者把这叫做 Pedagogical Refusal，教学式拒绝，背后挂的是 Vygotsky 的认知脚手架理论。机器人的“不配合”本身成了教学手段，这是一个很容易被记住的概念。\n\n数据方面，他们在秘鲁的 STEM 展会上收集了 524 次交互。百分之三十八的人第一次分错，其中百分之八十在 PERI 反馈或现场人员解释之后改对了，单次交互最长 56 秒。还有一个很坦诚的细节：模型识别不准时，作者会亲自上前解释机器人的感知局限，他们把这写成了“把技术局限转化为教育时刻”。\n\n为什么能中？我觉得有三点。一是踩中主题：HRI 2026 的主题是 Empowering Society，作者在引言和结论里反复点题，环保、教育、发展中国家，几个关键词全占了。二是低成本加真实场景，250 美元、五百多次公开部署，对 Video Track 来说，现场有真人、有表情、有反应，视频就有东西可拍。三是有一个能命名的交互概念，Pedagogical Refusal，让一个工程项目变成了一个可以讨论的 HRI 设计模式。\n\n当然毛病也明显：准确率前面写百分之八十、后面写百分之八十五，回收率百分之一点八和所引文献的百分之一点九对不上，结论第二段几乎重复第一段，人工介入也会让纠错率打折扣。这说明短文评审更看重想法、社会意义和展示价值，对细节相对宽容，但你自己投稿时千万别留这些口子，审稿人是会看出来的。\n\n给准备投 2027 Demo 或 Video 的同学一个启发：别只描述你的机器人能做什么，要给它最核心的交互行为起一个名字，再挂一个经典理论，最后用一个真实场景里的数字证明它起作用。名字、理论、数字，这三件套足够撑起三页纸。\n\n一个会说“不”的垃圾桶提醒我们：好的人机交互，有时恰恰是机器人选择不替你做。", "notes": [{"sec": "Abstract", "sum": "回收率<2%；现有桶两极失败；PERI实时验证用户分类，80%投错者纠正", "role": "全文压缩：痛点→方案→证据", "good": "用“两个极端”一句框住所有竞品，自己自然落在中间位置", "rects": [[1, 51.5, 255.39999999999998, 298.3, 379.2]], "page": 1, "y": 257.4}, {"sec": "1 Introduction", "sum": "瓶颈在人不在设施：意图-行动鸿沟；被动桶要求专业知识，智能桶让人脱节", "role": "立痛点并定位两端缺口", "good": "借行为科学概念命名痛点，把工程问题转成人的问题", "rects": [[1, 51.8, 579.0, 298.3, 626.1], [1, 316.0, 565.8, 562.4, 623.9]], "page": 1, "y": 567.8}, {"sec": "Figure 1", "sum": "木质外壳渲染图，编号1–3对应语音/LLM、视觉、机械分拣三模块", "role": "首页给出系统全貌", "good": "图中编号与第2节模块一一对应，读者可对照阅读", "rects": [[1, 316.0, 504.1, 562.4, 529.3]], "page": 1, "y": 506.1}, {"sec": "1 Introduction", "sum": "提出PERI：从“替你做”转向“教你做”，把投垃圾变成微课", "role": "亮定位与范式主张", "good": "用“替你做/教你做”对仗定义范式，并直接点名大会主题", "rects": [[1, 315.6, 620.6, 562.4, 711.6]], "page": 1, "y": 622.6}, {"sec": "2 System Architecture", "sum": "预算$250（不含Jetson与摄像头），系统分三模块", "role": "先给约束再给架构", "good": "开头就报预算，低成本成为设计前提而非附注", "rects": [[2, 51.8, 97.3, 298.3, 144.4]], "page": 2, "y": 99.3}, {"sec": "2.1 Vision Module", "sum": "YOLOv8识别4类约80%准确；补光+60%置信阈值；失败时作者人工解释", "role": "交代感知能力与失败兜底", "good": "主动写失败处理，把局限包装成教育时刻而非缺陷", "rects": [[2, 51.5, 166.3, 298.3, 323.0]], "page": 2, "y": 168.3}, {"sec": "2.2 Social Interaction & Privacy", "sum": "LLM部署在Jetson本地，仅西语、限定任务；语音图像不存储，只记匿名计数", "role": "回应公共部署的隐私顾虑", "good": "用privacy-first一词提前堵住审稿人对公共场所数据的质疑", "rects": [[2, 51.6, 344.9, 298.3, 435.8]], "page": 2, "y": 346.9}, {"sec": "2.3 Mechanical Module", "sum": "2自由度分拣机构；自动/手动两模式，手动下用户答对才执行", "role": "为核心交互机制铺垫", "rects": [[2, 51.5, 457.7, 298.3, 526.7]], "page": 2, "y": 459.7}, {"sec": "3 Novelty", "sum": "核心新意“教学式拒绝”：手动模式投错即暂停，以非评判反馈引导改正", "role": "提炼可命名的HRI贡献", "good": "给行为起名并挂Vygotsky认知脚手架，功能升格为设计模式", "rects": [[2, 51.8, 548.6, 298.3, 639.5]], "page": 2, "y": 550.6}, {"sec": "4 Deployment", "sum": "展会524次交互：38%首次投错，其中80%改正；单次≤56秒", "role": "用真实部署数据验证主张", "good": "指标选“初错率→改正率”，直接对应“教”而非“分”的目标", "rects": [[2, 51.8, 661.4, 298.3, 711.6], [2, 340.4, 653.5, 562.4, 711.6]], "page": 2, "y": 655.5}, {"sec": "Figure 2", "sum": "流程图：唤醒词→选模式→手动判对错→正向/纠正音效；含正文未提的学号积分", "role": "可视化完整交互闭环", "good": "错误分支在图中一目了然，省掉大段文字描述", "rects": [[2, 316.0, 595.5, 562.4, 620.7]], "page": 2, "y": 597.5}, {"sec": "4 Deployment", "sum": "用户微笑、致谢等正面反应；匿名、无PII、自愿参与，故未走IRB", "role": "补定性证据与伦理说明", "good": "短文也单列伦理条目，in-the-wild部署可直接照搬", "rects": [[3, 69.0, 83.3, 298.3, 207.4]], "page": 3, "y": 85.3}, {"sec": "5 Conclusion", "sum": "工程应引导人而非替代人，让用户成为环保的主动者", "role": "回扣大会主题收束", "rects": [[3, 51.8, 228.1, 298.3, 286.1]], "page": 3, "y": 230.1}, {"sec": "5 Conclusion", "sum": "重申$250低资源可行性与人工协同；未来做自主纠错", "role": "交代意义与未来方向", "rects": [[3, 51.8, 282.9, 298.3, 362.9]], "page": 3, "y": 284.9}], "pages": [{"img": "pages/3794589-p1.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794589-p2.jpg", "w": 612.0, "h": 792.0}, {"img": "pages/3794589-p3.jpg", "w": 612.0, "h": 792.0}], "pdf": "pdf/3794589.pdf"}], "core": ["3794575", "3794576", "3794578", "3794579", "3794585", "3794587", "3794588", "3794589"], "refs": null, "hci": null, "public": true};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cjkLen = s => (String(s||"").match(/[一-鿿]/g) || []).length + Math.round((String(s||"").match(/[A-Za-z]+/g) || []).length * 0.6);
+let cur = null;
+
+const byId = id => DATA.papers.find(x => x.id === id);
+const paperBtn = p => `<li><button class="pitem" data-go="p${p.id}">
+      <span class="nm">${esc(p.short)}</span>
+      <span class="ti">${esc(p.title)}</span>
+      <span class="chips"><span class="chip t">${esc(p.track)}</span><span class="chip">${esc(p.tag)}</span></span>
+    </button></li>`;
+function renderList() {
+  if (DATA.public) { const c = $("#credit"); c.hidden = false; c.innerHTML = `原文版权归各论文作者所有，依原文标注的 CC BY 4.0 或 CC BY-NC-ND 4.0 许可原样转载（未改动原文，批注为独立评论层）。点每篇顶部的「原文 PDF」或 DOI 查看出处。中文批注与播客为学习笔记，非作者观点。`; }
+  const g = [];
+  g.push(`<div class="grp"><h2>2026 中稿精读<small>Demo/Video 共 8 篇</small></h2><ul class="plist">${DATA.core.map(id => paperBtn(byId(id))).join("")}</ul></div>`);
+  if (DATA.refs) for (const k of ["A", "B"]) {
+    const r = DATA.refs[k];
+    const full = r.items.filter(it => byId(it.id));
+    g.push(`<div class="grp"><h2>参考 ${k} · ${esc(r.name)}<small>近 5 年 HRI Demo/Video</small></h2><ul class="plist">
+      <li><button class="pitem lst" data-go="ref${k}"><span class="rk">≡</span><span class="nm">排序清单（${r.items.length} 篇）</span></button></li>
+      ${full.map(it => paperBtn(byId(it.id))).join("")}</ul></div>`);
+  }
+  if (DATA.hci) g.push(`<div class="grp"><h2>HCI 拓展阅读<small>仅清单，不含精读</small></h2><ul class="plist"><li><button class="pitem lst" data-go="hci"><span class="rk">≡</span><span class="nm">A / B 两个方向的清单</span></button></li></ul></div>`);
+  $("#nav").innerHTML = g.join("");
+  $("#nav").addEventListener("click", e => { const b = e.target.closest("[data-go]"); if (b) { location.hash = b.dataset.go; $("#side").classList.remove("open"); } });
+}
+
+function showReader(on) {
+  $("#reader").hidden = !on; $("#listview").hidden = on;
+  $("#pdfLink").hidden = !on; $("#podBtn").hidden = !on;
+  if (!on) setPod(false, true);
+}
+
+function card(it, i) {
+  const has = byId(it.id);
+  const st = has ? `<span class="st full" data-go="p${it.id}">已精读 · 打开</span>` : it.file ? `<span class="st need">待下载 PDF：${esc(it.file)}</span>` : `<span class="st">仅清单</span>`;
+  const url = it.url || (it.doi ? "https://doi.org/" + it.doi : "");
+  return `<article class="card"><div class="no">${i + 1}</div>
+    <div class="tt">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(it.title)}</a>` : esc(it.title)}</div>
+    <div class="mt"><span>${esc(it.venue || "HRI")} ${esc(it.year)}</span><span class="chip">${esc(it.track || it.type || "")}</span>${it.authors ? `<span>${esc(it.authors)}</span>` : ""}${it.id ? st : ""}</div>
+    <div>${esc(it.brief)}</div>
+    <div class="why">↳ ${esc(it.why)}</div></article>`;
+}
+
+function renderRefs(k) {
+  showReader(false);
+  const r = DATA.refs[k];
+  document.querySelectorAll(".pitem").forEach(b => b.setAttribute("aria-current", b.dataset.go === "ref" + k));
+  $("#ptitle").textContent = `参考 ${k} · ${r.name}`;
+  $("#pmeta").textContent = `按重要程度排序 · ${r.items.length} 篇`;
+  $("#listview").innerHTML = `<p class="lv-intro">范围：HRI 2021–2026 Demo / Video（2024 含 alt.HRI Video）。${esc(r.desc)}。排在前面的最值得先读。</p>
+    ${r.items.map(card).join("")}
+    ${r.in_site.length ? `<h3 class="lv-h">本站已有、同样相关</h3>${r.in_site.map(s => { const p = byId(s.id); return `<article class="card"><div class="no">·</div><div class="tt"><a href="#p${s.id}">${esc(p.title)}</a></div><div class="mt"><span>HRI 2026</span><span class="chip">${esc(p.track)}</span></div><div>${esc(s.note)}</div></article>`; }).join("")}` : ""}`;
+}
+
+function renderHci() {
+  showReader(false);
+  document.querySelectorAll(".pitem").forEach(b => b.setAttribute("aria-current", b.dataset.go === "hci"));
+  $("#ptitle").textContent = "HCI 拓展阅读";
+  $("#pmeta").textContent = `A ${DATA.hci.A.length} 篇 · B ${DATA.hci.B.length} 篇`;
+  $("#listview").innerHTML = `<p class="lv-intro">HRI 之外的 HCI 相关工作（会议长文、Demo、LBW、期刊等），按对你项目的重要程度排序。</p>
+    <h3 class="lv-h">A · ${esc(DATA.refs.A.name)}</h3>${DATA.hci.A.map(card).join("")}
+    <h3 class="lv-h">B · ${esc(DATA.refs.B.name)}</h3>${DATA.hci.B.map(card).join("")}`;
+}
+
+function route() {
+  const h = location.hash.slice(1);
+  if (DATA.refs && (h === "refA" || h === "refB")) return renderRefs(h.slice(3));
+  if (h === "hci" && DATA.hci) return renderHci();
+  showReader(true);
+  renderPaper(h.startsWith("p") ? h.slice(1) : DATA.core[0]);
+}
+
+function readMinutes(p) {
+  let t = p.one_line + p.contributions.join("") + p.logic.join("") + p.why_accepted.join("") + p.takeaway;
+  p.notes.forEach(n => t += (n.sum || "") + (n.role || "") + (n.good || ""));
+  return Math.max(1, Math.round(cjkLen(t) / 420));
+}
+
+function renderPaper(id) {
+  const p = byId(id) || byId(DATA.core[0]);
+  cur = p;
+  document.querySelectorAll(".pitem").forEach(b => b.setAttribute("aria-current", b.dataset.go === "p" + p.id));
+  $("#ptitle").textContent = p.title;
+  $("#pmeta").textContent = `批注 ${p.notes.length} 条 · 约 ${readMinutes(p)} 分钟`;
+  $("#pdfLink").href = p.pdf;
+  $("#brief").innerHTML = `
+    <div class="full"><div class="chips" style="margin-bottom:8px"><span class="chip t">${esc(p.track)}</span><span class="chip">${esc(p.tag)}</span><span class="chip">${esc(p.kind)}</span></div>
+      <p class="oneline">${esc(p.one_line)}</p></div>
+    <div><h3>核心贡献（作者自述）</h3><ul>${p.contributions.map(c => `<li>${esc(c)}</li>`).join("")}</ul></div>
+    <div><h3>为什么能中</h3><ul>${p.why_accepted.map(c => `<li>${esc(c)}</li>`).join("")}</ul></div>
+    <div class="full"><h3>行文逻辑</h3><div class="flow">${p.logic.map((s,i) => (i ? '<span class="a">→</span>' : "") + `<span class="s">${esc(s)}</span>`).join("")}</div></div>
+    <div class="full take"><b>可借鉴：</b>${esc(p.takeaway)}</div>
+    ${p.for_me ? `<div class="full forme"><h3>对你的项目（${esc(DATA.refs?.[p.project]?.name || p.project)}）的启发</h3><ul>${p.for_me.map(c => `<li>${esc(c)}</li>`).join("")}</ul></div>` : ""}`;
+  const pages = $("#pages");
+  pages.innerHTML = p.pages.map((pg, i) => `
+    <div class="page-row" data-page="${i+1}">
+      <div class="page" style="aspect-ratio:${pg.w}/${pg.h}"><img src="${pg.img}" alt="第 ${i+1} 页" loading="${i ? "lazy" : "eager"}"><span class="pno">P${i+1}</span>
+        ${p.notes.map((n, k) => (n.rects||[]).filter(r => r[0] === i+1).map((r, j) => `<div class="hl" data-k="${k}" style="left:${(r[1]/pg.w*100).toFixed(2)}%;top:${(r[2]/pg.h*100).toFixed(2)}%;width:${((r[3]-r[1])/pg.w*100).toFixed(2)}%;height:${((r[4]-r[2])/pg.h*100).toFixed(2)}%">${j === 0 && n.page === i+1 ? `<span class="badge">${k+1}</span>` : ""}</div>`).join("")).join("")}
+      </div>
+      <div class="notes">${p.notes.map((n, k) => n.page !== i+1 ? "" : `
+        <div class="note" data-k="${k}" data-y="${n.y/pg.h}" tabindex="0">
+          <div class="hd"><span class="badge">${k+1}</span><span class="sec">${esc(n.sec)}</span>${n.role ? `<span class="role" title="${esc(n.role)}">${esc(n.role)}</span>` : ""}</div>
+          <div class="sum">${esc(n.sum)}</div>
+          ${n.good ? `<div class="good"><b>亮点</b>${esc(n.good)}</div>` : ""}
+        </div>`).join("")}</div>
+    </div>`).join("");
+  pages.querySelectorAll("img").forEach(img => img.addEventListener("load", layoutNotes));
+  layoutNotes();
+  renderPod();
+  $("#main").scrollTop = 0;
+}
+
+function layoutNotes() {
+  const stacked = matchMedia("(max-width: 980px)").matches;
+  document.querySelectorAll(".page-row").forEach(row => {
+    const page = row.querySelector(".page"), col = row.querySelector(".notes");
+    const H = page.getBoundingClientRect().height; let bottom = 0;
+    col.querySelectorAll(".note").forEach(n => {
+      if (stacked) { n.style.top = ""; return; }
+      const top = Math.max(+n.dataset.y * H - 6, bottom);
+      n.style.top = top + "px"; bottom = top + n.offsetHeight + 6;
+    });
+    col.style.height = stacked ? "" : Math.max(H, bottom) + "px";
+  });
+}
+
+function focusNote(k, from) {
+  document.querySelectorAll(".on").forEach(e => e.classList.remove("on"));
+  document.querySelectorAll(`[data-k="${k}"]`).forEach(e => e.classList.add("on"));
+  const target = from === "note" ? document.querySelector(`.hl[data-k="${k}"]`) : document.querySelector(`.note[data-k="${k}"]`);
+  if (target && matchMedia("(max-width: 980px)").matches) target.scrollIntoView({ block: "center" });
+}
+$("#pages").addEventListener("click", e => {
+  const n = e.target.closest(".note"); if (n) return focusNote(n.dataset.k, "note");
+  const h = e.target.closest(".hl"); if (h) return focusNote(h.dataset.k, "hl");
+});
+$("#pages").addEventListener("keydown", e => { const n = e.target.closest(".note"); if (n && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); focusNote(n.dataset.k, "note"); } });
+$("#pages").addEventListener("mouseover", e => {
+  const el = e.target.closest(".note,.hl"); if (!el) return;
+  document.querySelectorAll(`[data-k="${el.dataset.k}"]`).forEach(x => x.classList.add("on"));
+});
+$("#pages").addEventListener("mouseout", e => {
+  const el = e.target.closest(".note,.hl"); if (!el) return;
+  document.querySelectorAll(`[data-k="${el.dataset.k}"]`).forEach(x => x.classList.remove("on"));
+});
+
+function renderPod() {
+  const p = cur;
+  $("#podTitle").textContent = `${p.short} · 播客文稿`;
+  $("#podMeta").textContent = `约 ${Math.round(cjkLen(p.podcast) / 260 * 10) / 10} 分钟`;
+  $("#podBody").innerHTML = p.podcast.split(/\n\s*\n/).map(t => `<p>${esc(t.trim())}</p>`).join("");
+  $("#podBody").scrollTop = 0;
+}
+function setPod(open, silent) {
+  $("#pod").classList.toggle("open", open); $("#pod").setAttribute("aria-hidden", !open);
+  document.body.classList.toggle("pod-on", open); requestAnimationFrame(layoutNotes);
+  $("#podBtn").textContent = open ? "收起播客" : "播客文稿";
+  if (!silent) try { localStorage.setItem("podOpen", open ? "1" : "0"); } catch (e) {}
+}
+$("#podBtn").onclick = () => setPod(!$("#pod").classList.contains("open"));
+$("#podClose").onclick = () => setPod(false);
+$("#menuBtn").onclick = () => $("#side").classList.toggle("open");
+addEventListener("resize", layoutNotes);
+addEventListener("hashchange", route);
+$("#listview").addEventListener("click", e => { const b = e.target.closest("[data-go]"); if (b) location.hash = b.dataset.go; });
+
+renderList();
+route();
+try { if (localStorage.getItem("podOpen") === "1" && !$("#reader").hidden) setPod(true, true); } catch (e) {}
+if (document.fonts) document.fonts.ready.then(layoutNotes);
+</script>
+</body></html>
